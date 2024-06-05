@@ -1,3 +1,7 @@
+#define DHT11_PIN 7
+
+dht DHT;
+
 void setup() {
   Serial.begin(9600);
   delay(1000); // Wait before accessing sensors
@@ -27,7 +31,11 @@ void read_anemometer() {
 }
 
 void read_temperature() {
-
+  int chk = DHT.read11(DHT11_PIN);
+  Serial.print("Temperature = ");
+  Serial.println(DHT.temperature);
+  Serial.print("Humidity = ");
+  Serial.println(DHT.humidity);
 }
 
 void post_to_web() {
@@ -38,4 +46,5 @@ void loop() {
   read_anemometer();
   read_temperature();
   post_to_web();
+  delay(1000);
 }
