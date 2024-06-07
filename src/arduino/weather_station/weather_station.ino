@@ -19,7 +19,7 @@ void read_anemometer() {
   Serial.println("Reading wind speed...");
 
   float sensorValue = analogRead(A0);
-  Serial.print("Analog Value =");
+  Serial.print("Analog Value: ");
   Serial.println(sensorValue);
  
   float voltage = (sensorValue / 1024) * 5;
@@ -27,8 +27,8 @@ void read_anemometer() {
   Serial.println(" V");
  
   float wind_speed = mapfloat(voltage, 0.4, 2, 0, 32.4);
-  float speed_mph = ((wind_speed *3600)/1609.344);
-  Serial.print("Wind Speed =");
+  float speed_mph = ((wind_speed * 3600)/1609.344);
+  Serial.print("Wind Speed: ");
   Serial.print(wind_speed);
   Serial.println("m/s");
   Serial.print(speed_mph);
@@ -66,7 +66,7 @@ void post_to_web() {
 
 void loop() {
   Serial.println("Starting...");
-//  read_anemometer();
+  read_anemometer();
   read_temperature();
   post_to_web();
   delay(1000);
