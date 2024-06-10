@@ -1,18 +1,72 @@
 #include <DHT11.h>
+#include <SPI.h>
+#include <WiFi.h>
 
 #define DHT11_PIN 7
 
+char ssid[] = "yourNetwork"; //  your network SSID (name)
+char pass[] = "secretPassword"; // your network password (use for WPA, or use as key for WEP)
+int keyIndex = 0; // your network key Index number (needed only for WEP)
+
+int status = WL_IDLE_STATUS;
+char server[] = "www.google.com";    // name address for Google (using DNS)
+
+WiFiClient client;
 DHT11 dht11(DHT11_PIN);
 
 void setup() {
   Serial.println("Initializing...");
   Serial.begin(9600);
-  delay(1000); // Wait before accessing sensors
+
+  // Wait for the serial port to connect.
+  while (!Serial) {
+    ;
+  }
+
+  // Is the Wifi shield available?
+  if (WiFi.status() == WL_NO_SHIELD) {
+    Serial.println("WiFi shield not present");
+    while (true);
+  }
+
+  // Check the Wifi firmware version.
+  String fv = WiFi.firmwareVersion();
+  if (fv != "1.1.0") {
+    Serial.println("Please upgrade the firmware");
+  }
+
+  // If not connected to Wifi, then attempt to connect.
+  while (status != WL_CONNECTED) {
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(ssid);
+
+    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+    status = WiFi.begin(ssid, pass);
+
+    // Wait 10 seconds for connection.
+    delay(10000);
+  }
+
+  Serial.println("Connected to wifi");
+  printWifiStatus();
 }
 
-float mapfloat(float x, float in_min, float in_max, float out_min, float out_max)
-{
+float mapfloat(float x, float in_min, float in_max, float out_min, float out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+void printWifiStatus() {
+  Serial.print("SSID: ");
+  Serial.println(WiFi.SSID());
+
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(ip);
+
+  long rssi = WiFi.RSSI();
+  Serial.print("signal strength (RSSI):");
+  Serial.print(rssi);
+  Serial.println(" dBm");
 }
 
 void read_anemometer() {
@@ -71,3 +125,4 @@ void loop() {
   post_to_web();
   delay(1000);
 }
+
