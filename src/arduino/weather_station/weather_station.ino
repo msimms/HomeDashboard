@@ -2,7 +2,9 @@
 #include <SPI.h>
 #include <WiFi.h>
 
+#define HAS_WIFI 0
 #define DHT11_PIN 7
+#define MIN_VOLTAGE 0.4
 
 char ssid[] = "yourNetwork"; //  your network SSID (name)
 char pass[] = "secretPassword"; // your network password (use for WPA, or use as key for WEP)
@@ -23,32 +25,34 @@ void setup() {
     ;
   }
 
-  // Is the Wifi shield available?
-  if (WiFi.status() == WL_NO_SHIELD) {
-    Serial.println("WiFi shield not present");
-    while (true);
+  if (HAS_WIFI) {
+    // Is the Wifi shield available?
+    if (WiFi.status() == WL_NO_SHIELD) {
+      Serial.println("WiFi shield not present");
+      while (true);
+    }
+
+    // Check the Wifi firmware version.
+    String fv = WiFi.firmwareVersion();
+    if (fv != "1.1.0") {
+      Serial.println("Please upgrade the firmware");
+    }
+
+    // If not connected to Wifi, then attempt to connect.
+    while (status != WL_CONNECTED) {
+      Serial.print("Attempting to connect to SSID: ");
+      Serial.println(ssid);
+
+      // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+      status = WiFi.begin(ssid, pass);
+
+      // Wait 10 seconds for connection.
+      delay(10000);
+    }
+
+    Serial.println("Connected to wifi");
+    printWifiStatus();
   }
-
-  // Check the Wifi firmware version.
-  String fv = WiFi.firmwareVersion();
-  if (fv != "1.1.0") {
-    Serial.println("Please upgrade the firmware");
-  }
-
-  // If not connected to Wifi, then attempt to connect.
-  while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to SSID: ");
-    Serial.println(ssid);
-
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-    status = WiFi.begin(ssid, pass);
-
-    // Wait 10 seconds for connection.
-    delay(10000);
-  }
-
-  Serial.println("Connected to wifi");
-  printWifiStatus();
 }
 
 float mapfloat(float x, float in_min, float in_max, float out_min, float out_max) {
@@ -80,7 +84,11 @@ void read_anemometer() {
   Serial.print(voltage);
   Serial.println(" V");
  
-  float wind_speed = mapfloat(voltage, 0.4, 2, 0, 32.4);
+  float wind_speed = 0.0;
+  if (voltage >= MIN_VOLTAGE) {
+    wind_speed = mapfloat(voltage, 0.4, 2, 0, 32.4);
+  }
+
   float speed_mph = ((wind_speed * 3600)/1609.344);
   Serial.print("Wind Speed: ");
   Serial.print(wind_speed);
@@ -119,10 +127,9 @@ void post_to_web() {
 }
 
 void loop() {
-  Serial.println("Starting...");
   read_anemometer();
   read_temperature();
   post_to_web();
-  delay(1000);
+  delay(5000);
 }
 
