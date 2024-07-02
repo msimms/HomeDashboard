@@ -1,76 +1,30 @@
 #include <DHT11.h>
 #include <SPI.h>
-#include <WiFi.h>
+#include <WiFiNINA.h>
 
-#define HAS_WIFI 0
 #define DHT11_PIN 7
 #define MIN_VOLTAGE 0.4
 
-char ssid[] = "yourNetwork"; //  your network SSID (name)
-char pass[] = "secretPassword"; // your network password (use for WPA, or use as key for WEP)
-int keyIndex = 0; // your network key Index number (needed only for WEP)
+#include "arduino_secrets.h" 
+///////please enter your sensitive data in the Secret tab/arduino_secrets.h
+char ssid[] = SECRET_SSID;   // your network SSID (name)
+char pass[] = SECRET_PASS;   // your network password (use for WPA, or use as key for WEP)
+int keyIndex = 0;            // your network key index number (needed only for WEP)
 
 int status = WL_IDLE_STATUS;
+// if you don't want to use DNS (and reduce your sketch size)
+// use the numeric IP instead of the name for the server:
+//IPAddress server(74,125,232,128);  // numeric IP for Google (no DNS)
 char server[] = "www.google.com";    // name address for Google (using DNS)
 
+// Initialize the Ethernet client library with the IP address and port of the server
+// that you want to connect to (port 80 is default for HTTP):
 WiFiClient client;
+
 DHT11 dht11(DHT11_PIN);
-
-void setup() {
-  Serial.println("Initializing...");
-  Serial.begin(9600);
-
-  // Wait for the serial port to connect.
-  while (!Serial) {
-    ;
-  }
-
-  if (HAS_WIFI) {
-    // Is the Wifi shield available?
-    if (WiFi.status() == WL_NO_SHIELD) {
-      Serial.println("WiFi shield not present");
-      while (true);
-    }
-
-    // Check the Wifi firmware version.
-    String fv = WiFi.firmwareVersion();
-    if (fv != "1.1.0") {
-      Serial.println("Please upgrade the firmware");
-    }
-
-    // If not connected to Wifi, then attempt to connect.
-    while (status != WL_CONNECTED) {
-      Serial.print("Attempting to connect to SSID: ");
-      Serial.println(ssid);
-
-      // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-      status = WiFi.begin(ssid, pass);
-
-      // Wait 10 seconds for connection.
-      delay(10000);
-    }
-
-    Serial.println("Connected to wifi");
-    printWifiStatus();
-  }
-}
 
 float mapfloat(float x, float in_min, float in_max, float out_min, float out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-
-void printWifiStatus() {
-  Serial.print("SSID: ");
-  Serial.println(WiFi.SSID());
-
-  IPAddress ip = WiFi.localIP();
-  Serial.print("IP Address: ");
-  Serial.println(ip);
-
-  long rssi = WiFi.RSSI();
-  Serial.print("signal strength (RSSI):");
-  Serial.print(rssi);
-  Serial.println(" dBm");
 }
 
 void read_anemometer() {
@@ -124,6 +78,60 @@ void read_temperature() {
 void post_to_web() {
   Serial.println("Posting...");
 
+  // If there are incoming bytes available
+  // from the server, read them and print them:
+  while (client.available()) {
+    char c = client.read();
+    Serial.write(c);
+  }
+
+  // If the server's disconnected, stop the client:
+  if (!client.connected()) {
+    Serial.println();
+    Serial.println("disconnecting from server.");
+    client.stop();
+  }
+}
+
+void setup() {
+  // Initialize serial and wait for port to open:
+  Serial.begin(9600);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+
+  // Check for the WiFi module:
+  if (WiFi.status() == WL_NO_MODULE) {
+    Serial.println("Communication with WiFi module failed!");
+    // don't continue
+    while (true);
+  }
+
+  String fv = WiFi.firmwareVersion();
+  if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
+    Serial.println("Please upgrade the firmware");
+  }
+
+  // Attempt to connect to WiFi network:
+  while (status != WL_CONNECTED) {
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(ssid);
+
+    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+    status = WiFi.begin(ssid, pass);
+
+    // Wait 10 seconds for connection:
+    delay(10000);
+  }
+  Serial.println("Connected to WiFi");
+  printWifiStatus();
+
+  Serial.println("\nStarting connection to server...");
+
+  // If you get a connection, report back via serial:
+  if (client.connect(server, 80)) {
+    Serial.println("connected to server");
+  }
 }
 
 void loop() {
@@ -131,5 +139,22 @@ void loop() {
   read_temperature();
   post_to_web();
   delay(5000);
+}
+
+void printWifiStatus() {
+  // Print the SSID of the network you're attached to:
+  Serial.print("SSID: ");
+  Serial.println(WiFi.SSID());
+
+  // Print your board's IP address:
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(ip);
+
+  // Print the received signal strength:
+  long rssi = WiFi.RSSI();
+  Serial.print("Signal strength (RSSI):");
+  Serial.print(rssi);
+  Serial.println(" dBm");
 }
 
