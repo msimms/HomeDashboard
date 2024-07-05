@@ -48,9 +48,9 @@ void read_anemometer() {
   float speed_mph = ((wind_speed * 3600)/1609.344);
   Serial.print("Wind Speed: ");
   Serial.print(wind_speed);
-  Serial.println("m/s");
+  Serial.print(" m/s (");
   Serial.print(speed_mph);
-  Serial.println("mph");
+  Serial.println(" mph)");
 }
 
 void read_temperature_from_dht11() {
@@ -78,9 +78,10 @@ void read_temperature_from_dht11() {
 }
 
 void read_temperature_from_am2315() {
+  Serial.println("Reading temperature and humidity...");
   int status = DHT.read();
 
-  Serial.print("AM3215C");
+  Serial.print("AM3215C Status: ");
   switch (status) {
     case AM2315C_OK:
       Serial.print("OK");
@@ -146,7 +147,6 @@ void setup() {
     // don't continue
     while (true);
   }
-
   String fv = WiFi.firmwareVersion();
   if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
     Serial.println("Please upgrade the firmware");
@@ -166,17 +166,20 @@ void setup() {
   Serial.println("Connected to WiFi");
   printWifiStatus();
 
+  // Connect. If you get a connection, report back via serial:
   Serial.println("\nStarting connection to server...");
-
-  // If you get a connection, report back via serial:
   if (client.connect(server, 80)) {
     Serial.println("connected to server");
   }
+
+  Wire.begin();
+  Wire.setClock(400000);
+  DHT.begin();    //  ESP32 default pins 21 22
 }
 
 void loop() {
   read_anemometer();
-  read_temperature_from_dht11();
+  read_temperature_from_am2315();
   post_to_web();
   delay(5000);
 }
