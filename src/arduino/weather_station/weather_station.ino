@@ -1,7 +1,8 @@
 #include <DHT11.h>
 #include <SPI.h>
 #include <WiFiNINA.h>
-#include "AM2315C.h"
+#include <Wire.h>
+#include <Adafruit_AM2315.h>
 
 #define DHT11_PIN 7
 #define MIN_VOLTAGE 0.4
@@ -23,7 +24,14 @@ char server[] = "www.google.com";    // name address for Google (using DNS)
 WiFiClient client;
 
 DHT11 dht11(DHT11_PIN);
-AM2315C DHT;
+
+//                    +-----------------+
+//    RED    -------- | VDD             |
+//    YELLOW -------- | SDA    AM2315C  |
+//    BLACK  -------- | GND             |
+//    WHITE  -------- | SCL             |
+//                    +-----------------+
+Adafruit_AM2315 am2315c;
 
 float mapfloat(float x, float in_min, float in_max, float out_min, float out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
@@ -45,7 +53,7 @@ void read_anemometer() {
     wind_speed = mapfloat(voltage, 0.4, 2, 0, 32.4);
   }
 
-  float speed_mph = ((wind_speed * 3600)/1609.344);
+  float speed_mph = ((wind_speed * 3600) / 1609.344);
   Serial.print("Wind Speed: ");
   Serial.print(wind_speed);
   Serial.print(" m/s (");
@@ -79,48 +87,23 @@ void read_temperature_from_dht11() {
 
 void read_temperature_from_am2315() {
   Serial.println("Reading temperature and humidity...");
-  int status = DHT.read();
 
-  Serial.print("AM3215C Status: ");
-  switch (status) {
-    case AM2315C_OK:
-      Serial.print("OK");
-      Serial.print("Temperature: ");
-      Serial.print(DHT.getHumidity(), 1);
-      Serial.print(" °C\tHumidity: ");
-      Serial.print(DHT.getTemperature(), 1);
-      Serial.println(" %");
-      break;
-    case AM2315C_ERROR_CHECKSUM:
-      Serial.print("Checksum error");
-      break;
-    case AM2315C_ERROR_CONNECT:
-      Serial.print("Connect error");
-      break;
-    case AM2315C_MISSING_BYTES:
-      Serial.print("Missing bytes");
-      break;
-    case AM2315C_ERROR_BYTES_ALL_ZERO:
-      Serial.print("All bytes read zero");
-      break;
-    case AM2315C_ERROR_READ_TIMEOUT:
-      Serial.print("Read time out");
-      break;
-    case AM2315C_ERROR_LASTREAD:
-      Serial.print("Error read too fast");
-      break;
-    default:
-      Serial.print("Unknown error");
-      break;
+  float temperature, humidity;
+
+  // Attempt to read the temperature and humidity values.
+  if (am2315c.readTemperatureAndHumidity(&temperature, &humidity)) {
+    Serial.print("Temp *C: "); Serial.println(temperature);
+    Serial.print("Hum %: "); Serial.println(humidity);
   }
-  Serial.print("\n");
+  else {
+    Serial.println("Failed to read data from AM2315");
+  }
 }
 
 void post_to_web() {
   Serial.println("Posting...");
 
-  // If there are incoming bytes available
-  // from the server, read them and print them:
+  // If there are incoming bytes available from the server, read them and print them:
   while (client.available()) {
     char c = client.read();
     Serial.write(c);
@@ -134,14 +117,25 @@ void post_to_web() {
   }
 }
 
-void setup() {
-  // Initialize serial and wait for port to open:
-  Serial.begin(9600);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
+void printWifiStatus() {
+  // Print the SSID of the attached network.
+  Serial.print("SSID: ");
+  Serial.println(WiFi.SSID());
 
-  // Check for the WiFi module:
+  // Print your board's IP address.
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(ip);
+
+  // Print the received signal strength.
+  long rssi = WiFi.RSSI();
+  Serial.print("Signal strength (RSSI):");
+  Serial.print(rssi);
+  Serial.println(" dBm");
+}
+
+void setupWifi() {
+  // Check for the WiFi module.
   if (WiFi.status() == WL_NO_MODULE) {
     Serial.println("Communication with WiFi module failed!");
     // don't continue
@@ -152,7 +146,7 @@ void setup() {
     Serial.println("Please upgrade the firmware");
   }
 
-  // Attempt to connect to WiFi network:
+  // Attempt to connect to WiFi network.
   while (status != WL_CONNECTED) {
     Serial.print("Attempting to connect to SSID: ");
     Serial.println(ssid);
@@ -166,38 +160,31 @@ void setup() {
   Serial.println("Connected to WiFi");
   printWifiStatus();
 
-  // Connect. If you get a connection, report back via serial:
+  // Connect. If you get a connection, report back via serial.
   Serial.println("\nStarting connection to server...");
   if (client.connect(server, 80)) {
     Serial.println("connected to server");
   }
+}
 
-  Wire.begin();
-  Wire.setClock(400000);
-  DHT.begin();    //  ESP32 default pins 21 22
+void setup() {
+  // Initialize serial and wait for port to open.
+  Serial.begin(9600);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+
+//  Wire.begin();
+//  digitalWrite(SDA, 0);
+//  digitalWrite(SCL, 0);
+  if (!am2315c.begin()) {
+     Serial.println("AM2315C not found!");
+  }
 }
 
 void loop() {
   read_anemometer();
   read_temperature_from_am2315();
-  post_to_web();
+//  post_to_web();
   delay(5000);
 }
-
-void printWifiStatus() {
-  // Print the SSID of the network you're attached to:
-  Serial.print("SSID: ");
-  Serial.println(WiFi.SSID());
-
-  // Print your board's IP address:
-  IPAddress ip = WiFi.localIP();
-  Serial.print("IP Address: ");
-  Serial.println(ip);
-
-  // Print the received signal strength:
-  long rssi = WiFi.RSSI();
-  Serial.print("Signal strength (RSSI):");
-  Serial.print(rssi);
-  Serial.println(" dBm");
-}
-
