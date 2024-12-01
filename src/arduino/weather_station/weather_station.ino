@@ -1,53 +1,46 @@
 #include <DHT11.h>
 #include <SPI.h>
-#include <WiFiNINA.h>
 #include <Wire.h>
-#include <Adafruit_AM2315.h>
+#include <WiFiNINA.h>
+#include "arduino_secrets.h" 
 
 #define DHT11_PIN 7
 #define MIN_VOLTAGE 0.4
+#define AM2315_I2CADDR 0x5C
+#define AM2315_READREG 0x03
 
-#include "arduino_secrets.h" 
-///////please enter your sensitive data in the Secret tab/arduino_secrets.h
-char ssid[] = SECRET_SSID;   // your network SSID (name)
-char pass[] = SECRET_PASS;   // your network password (use for WPA, or use as key for WEP)
-int keyIndex = 0;            // your network key index number (needed only for WEP)
-
-int status = WL_IDLE_STATUS;
-// if you don't want to use DNS (and reduce your sketch size)
-// use the numeric IP instead of the name for the server:
-//IPAddress server(74,125,232,128);  // numeric IP for Google (no DNS)
-char server[] = "www.google.com";    // name address for Google (using DNS)
-
-// Initialize the Ethernet client library with the IP address and port of the server
-// that you want to connect to (port 80 is default for HTTP):
-WiFiClient client;
+char ssid[] = SECRET_SSID;            // your network SSID (name)
+char pass[] = SECRET_PASS;            // your network password (use for WPA, or use as key for WEP)
+int status = WL_IDLE_STATUS;          // the Wi-Fi radio's status
+int ledState = LOW;                   // ledState used to set the LED
+unsigned long previousMillisInfo = 0; // will store last time Wi-Fi information was updated
+unsigned long previousMillisLED = 0;  // will store the last time LED was updated
+const int intervalInfo = 5000;        // interval at which to update the board information
 
 DHT11 dht11(DHT11_PIN);
 
-//                    +-----------------+
-//    RED    -------- | VDD             |
-//    YELLOW -------- | SDA    AM2315C  |
-//    BLACK  -------- | GND             |
-//    WHITE  -------- | SCL             |
-//                    +-----------------+
-Adafruit_AM2315 am2315c;
+// RED    -------- | VDD             |
+// YELLOW -------- | SDA    AM2315C  |
+// BLACK  -------- | GND             |
+// WHITE  -------- | SCL             |
 
+/// @function mapfloat
 float mapfloat(float x, float in_min, float in_max, float out_min, float out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+/// @function read_anemometer
 void read_anemometer() {
   Serial.println("Reading wind speed...");
 
   float sensorValue = analogRead(A0);
   Serial.print("Analog Value: ");
   Serial.println(sensorValue);
- 
+
   float voltage = (sensorValue / 1024) * 5;
   Serial.print(voltage);
   Serial.println(" V");
- 
+
   float wind_speed = 0.0;
   if (voltage >= MIN_VOLTAGE) {
     wind_speed = mapfloat(voltage, 0.4, 2, 0, 32.4);
@@ -61,7 +54,8 @@ void read_anemometer() {
   Serial.println(" mph)");
 }
 
-void read_temperature_from_dht11() {
+/// @function read_temperature_and_humidity_from_dht11
+void read_temperature_and_humidity_from_dht11() {
   Serial.println("Reading temperature and humidity...");
 
   int temperature = 0;
@@ -85,44 +79,70 @@ void read_temperature_from_dht11() {
   }
 }
 
-void read_temperature_from_am2315() {
+/// @function read_temperature_and_humidity_from_am2315
+void read_temperature_and_humidity_from_am2315() {
   Serial.println("Reading temperature and humidity...");
 
   float temperature, humidity;
 
-  // Attempt to read the temperature and humidity values.
-  if (am2315c.readTemperatureAndHumidity(&temperature, &humidity)) {
-    Serial.print("Temp *C: "); Serial.println(temperature);
-    Serial.print("Hum %: "); Serial.println(humidity);
+  uint8_t reply[10];
+  uint8_t sreply[10];
+
+  // Wake up the sensor.
+  Serial.println("A");
+  Wire.beginTransmission(AM2315_I2CADDR);
+  delay(2);
+  uint8_t end1 = Wire.endTransmission();
+
+  // Send the read command.
+  Wire.beginTransmission(AM2315_I2CADDR);
+  uint8_t write1 = Wire.write(AM2315_READREG);
+  uint8_t write2 = Wire.write(0x00);  // start at address 0x0
+  uint8_t write3 = Wire.write(4);  // request 4 bytes data
+  uint8_t end2 = Wire.endTransmission();
+  
+  // Add delay between request and actual read.
+  delay(10);
+
+  // Read the response.
+  uint8_t request1 = Wire.requestFrom(AM2315_I2CADDR, 8);
+  for (uint8_t i=0; i<8; i++) {
+    reply[i] = Wire.read();
+    sreply[i] = reply[i];
   }
-  else {
-    Serial.println("Failed to read data from AM2315");
+  
+  if (reply[0] != AM2315_READREG && reply[1] != 4) {
   }
 }
 
-void post_to_web() {
-  Serial.println("Posting...");
+/// @function setup_wifi
+void setup_wifi() {
+  Serial.println("Setting up Wifi...");
 
-  // If there are incoming bytes available from the server, read them and print them:
-  while (client.available()) {
-    char c = client.read();
-    Serial.write(c);
+  // Set the LED as output.
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  // attempt to connect to Wi-Fi network:
+  while (status != WL_CONNECTED) {
+    Serial.print("Attempting to connect to network: ");
+    Serial.println(ssid);
+    status = WiFi.begin(ssid, pass);
+
+    // Wait 10 seconds for connection.
+    delay(10000);
   }
 
-  // If the server's disconnected, stop the client:
-  if (!client.connected()) {
-    Serial.println();
-    Serial.println("disconnecting from server.");
-    client.stop();
-  }
+  // You're connected now, so print out the data.
+  Serial.println("Wifi connected!");
 }
 
-void printWifiStatus() {
+/// @function print_wifi_status
+void print_wifi_status() {
   // Print the SSID of the attached network.
   Serial.print("SSID: ");
   Serial.println(WiFi.SSID());
 
-  // Print your board's IP address.
+  // Print the board's IP address.
   IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
   Serial.println(ip);
@@ -134,39 +154,41 @@ void printWifiStatus() {
   Serial.println(" dBm");
 }
 
-void setupWifi() {
-  // Check for the WiFi module.
-  if (WiFi.status() == WL_NO_MODULE) {
-    Serial.println("Communication with WiFi module failed!");
-    // don't continue
-    while (true);
-  }
-  String fv = WiFi.firmwareVersion();
-  if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
-    Serial.println("Please upgrade the firmware");
-  }
-
-  // Attempt to connect to WiFi network.
-  while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to SSID: ");
-    Serial.println(ssid);
-
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-    status = WiFi.begin(ssid, pass);
-
-    // Wait 10 seconds for connection:
-    delay(10000);
-  }
-  Serial.println("Connected to WiFi");
-  printWifiStatus();
-
-  // Connect. If you get a connection, report back via serial.
-  Serial.println("\nStarting connection to server...");
-  if (client.connect(server, 80)) {
-    Serial.println("connected to server");
-  }
+/// @function setup_anemometer
+void setup_anemometer() {
+  Serial.println("Setting up the anemometer...");
+  pinMode(A0, INPUT_PULLUP); // Enable internal pull-up resistor on pin A0
+  Serial.println("Done setting up the anemometer...");
 }
 
+/// @function setup_am2315
+void setup_am2315() {
+  Serial.println("Setting up the AM2315...");
+  pinMode(A4, INPUT_PULLUP); // Enable internal pull-up resistor on pin A4
+  pinMode(A5, INPUT_PULLUP); // Enable internal pull-up resistor on pin A4
+
+  // Wake up the AM2315
+  Wire.beginTransmission(AM2315_I2CADDR);
+  Wire.write(AM2315_READREG);
+  Serial.println("0");
+  Wire.endTransmission();
+  Serial.println("0");
+
+  // Add delay between request and actual read.
+  delay(50);
+  Serial.println("0");
+
+  Wire.beginTransmission(AM2315_I2CADDR);
+  Wire.write(AM2315_READREG);
+  Wire.write(0x00); // start at address 0x0
+  Wire.write(4); // request 4 bytes data
+  Wire.endTransmission();
+  Serial.println("0");
+
+  Serial.println("Done setting up the AM2315...");
+}
+
+/// @function setup
 void setup() {
   // Initialize serial and wait for port to open.
   Serial.begin(9600);
@@ -174,17 +196,16 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
-//  Wire.begin();
-//  digitalWrite(SDA, 0);
-//  digitalWrite(SCL, 0);
-  if (!am2315c.begin()) {
-     Serial.println("AM2315C not found!");
-  }
+  // Initialize the anemometer.
+  setup_anemometer();
+
+  // Initialize the AM2315.
+  //setup_am2315();
 }
 
+/// @function loop
 void loop() {
   read_anemometer();
-  read_temperature_from_am2315();
-//  post_to_web();
+  //read_temperature_and_humidity_from_am2315();
   delay(5000);
 }
