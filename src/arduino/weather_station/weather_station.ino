@@ -164,10 +164,12 @@ void setup_anemometer() {
 /// @function setup_am2315
 void setup_am2315() {
   Serial.println("Setting up the AM2315...");
-  pinMode(A4, INPUT_PULLUP); // Enable internal pull-up resistor on pin A4
-  pinMode(A5, INPUT_PULLUP); // Enable internal pull-up resistor on pin A4
 
-  // Wake up the AM2315
+  // Configure the internal pullup resistors.
+  pinMode(A4, INPUT_PULLUP); // Enable internal pull-up resistor on pin A4
+  pinMode(A5, INPUT_PULLUP); // Enable internal pull-up resistor on pin A5
+
+  // Wake up the AM2315.
   Wire.beginTransmission(AM2315_I2CADDR);
   Wire.write(AM2315_READREG);
   Serial.println("0");
