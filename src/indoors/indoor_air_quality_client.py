@@ -28,6 +28,7 @@ import logging
 import pymongo
 import serial
 import sys
+import time
 
 def insert_into_collection(collection, doc):
     """Handles differences in document insertion between pymongo 3 and 4."""
@@ -87,6 +88,7 @@ def read_from_tty(callback, device: str, baud_rate: int = 9600, timeout: int = 1
                 values = parse_air_quality_output(line)
                 if len(values) > 0:
                     dictionary = dict(zip(keys, values))
+                    dictionary['ts'] = time.time()
                     callback(dictionary)
     except serial.SerialException as e:
         print(f"Error: {e}")
