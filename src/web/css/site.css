@@ -1,0 +1,159 @@
+/* Light mode */
+@media (prefers-color-scheme: light) {
+    body {
+        --theme: #FFFFFF;
+        --text: #000000;
+        --navbkgnd: #333333;
+        --navtext: #FFFFFF;
+        --navhover: #CCCCCC;
+        --gradientmin: #FFFFFF;
+        --gradientmax: #CCCCCC;
+    }
+    tbody tr:nth-child(odd) {
+        background-color: #333333;
+        color: #FFFFFF;
+    }
+    .block tr:nth-child(even) {
+        background-color: #000000;
+        color: #FFFFFF;
+    }
+    a:link { color: var(--theme) }
+    a:visited { color: var(--theme) }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    body {
+        --theme: #000000;
+        --text: #FFFFFF;
+        --navbkgnd: #000000;
+        --navtext: #FFFFFF;
+        --navhover: #CCCCCC;
+        --gradientmin: #000000;
+        --gradientmax: #000000;
+    }
+    tbody tr:nth-child(odd) {
+        background-color: #000000;
+        color: var(--text);
+    }
+    .block tr:nth-child(even) {
+        background-color: #aaaaaa;
+        color: var(--text);
+    }
+    a:link { color: var(--text) }
+    a:visited { color: var(--text) }
+}
+
+body {
+    background-position: center;
+    background-size: 512px;
+    background-color: var(--theme);
+    color: var(--text);
+    font-size: 100%;
+    min-height: 1024px;
+    opacity: 0.95;
+}
+
+div {
+    margin: 10px;
+}
+
+section {
+    color: var(--text);
+    vertical-align: top;
+    margin: 0px;
+    padding: 0px;
+}
+
+h1 {
+    color: var(--text);
+    text-transform: uppercase;
+    text-align: left;
+    font-size: 250%;
+    margin: 0px;
+    padding: 0px;
+}
+
+h2 {
+    color: var(--text);
+    background: var(--theme);
+}
+
+h3 {
+    margin: 8px 0 8px 0;
+    padding: 0px;
+}
+
+table {
+    font-family: arial, sans-serif;
+    background: linear-gradient(to left, var(--gradientmin) , var(--gradientmax));
+    margin-left: auto;
+    margin-right: auto;
+    width: 90%;
+}
+
+td {
+    border: 1px solid var(--theme);
+    padding: 2px;
+    border-radius: 2px;
+    text-align: center;
+}
+
+tr {
+    opacity: 0.7;
+}
+
+tr:hover {
+    opacity: 1.0;
+}
+
+tr:first-child {
+    font-weight: bold;
+    font-size: 24px;
+}
+
+.block p {
+    text-indent: 30px;
+}
+
+.block input {
+    width: 40%;
+    height: 40px;
+    font-size: 36px;
+}
+
+.block label {
+    width: 40%;
+    height: 40px;
+    font-size: 36px;
+    color: var(--info);
+}
+
+.block text {
+    font-size: 36px;
+}
+
+.block section {
+    border: 10px;
+}
+
+.block div {
+    border: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.block table {
+    font-family: arial, sans-serif;
+    background: linear-gradient(to left, var(--gradientmin) , var(--gradientmax));
+    margin-left: auto;
+    margin-right: auto;
+    width: 90%;
+    opacity: 0.95;
+}
+
+.block textarea {
+    width: 80%;
+    max-width: 80%;
+}
