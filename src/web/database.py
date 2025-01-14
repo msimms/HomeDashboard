@@ -127,10 +127,6 @@ def update_collection(collection, doc):
 
 class AppMongoDatabase(Database):
     """Mongo DB implementation of the application database."""
-    conn = None
-    database = None
-    users_collection = None
-    indoor_air_quality = None
 
     def __init__(self):
         Database.__init__(self)

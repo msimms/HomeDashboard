@@ -17,6 +17,8 @@ g_db_uri = ""
 g_tempmod_dir = "tempmod"
 
 ERROR_LOG = 'error.log'
+CSS_DIR = 'css'
+JS_DIR = 'js'
 HTML_DIR = 'html'
 
 def signal_handler(signal, frame):
@@ -32,6 +34,28 @@ def log_error(log_str):
     """Writes an error message to the log file."""
     logger = logging.getLogger()
     logger.error(log_str)
+
+@g_flask_app.route('/css/<file_name>')
+def css(file_name):
+    """Returns the CSS page."""
+    try:
+        return flask.send_from_directory(CSS_DIR, file_name)
+    except:
+        log_error(traceback.format_exc())
+        log_error(sys.exc_info()[0])
+        log_error('Unhandled exception in ' + css.__name__)
+    return ""
+
+@g_flask_app.route('/js/<file_name>')
+def js(file_name):
+    """Returns the JS page."""
+    try:
+        return flask.send_from_directory(JS_DIR, file_name)
+    except:
+        log_error(traceback.format_exc())
+        log_error(sys.exc_info()[0])
+        log_error('Unhandled exception in ' + js.__name__)
+    return ""
 
 @g_flask_app.route('/')
 def index():
