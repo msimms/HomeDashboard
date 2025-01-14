@@ -1,4 +1,5 @@
 import argparse
+import database
 import flask
 import json
 import logging
@@ -12,6 +13,7 @@ from mako.template import Template
 g_flask_app = flask.Flask(__name__)
 g_root_dir = ""
 g_root_url = ""
+g_db_uri = ""
 g_tempmod_dir = "tempmod"
 
 ERROR_LOG = 'error.log'
@@ -42,32 +44,35 @@ def index():
         log_error("Unhandled Exception")
     return ""
 
-def handle_indoor_air_request(self):
+def handle_indoor_air_request(values):
+    global g_db_uri
+    db = database.AppMongoDatabase()
+    db.connect(g_db_uri)
     return False, ""
 
-def handle_api_1_0_get_request(self, request, values):
+def handle_api_1_0_get_request(request, values):
     """Called to parse a version 1.0 API GET request."""
     if request == 'indoor_air':
-        return self.handle_indoor_air_request(values)
+        return handle_indoor_air_request(values)
     return False, ""
 
-def handle_api_1_0_post_request(self, request, values):
+def handle_api_1_0_post_request(request, values):
     """Called to parse a version 1.0 API POST request."""
     return False, ""
 
-def handle_api_1_0_delete_request(self, request, values):
+def handle_api_1_0_delete_request(request, values):
     """Called to parse a version 1.0 API DELETE request."""
     return False, ""
 
-def handle_api_request(self, verb, request, values):
+def handle_api_request(verb, request, values):
     """Handles API requests."""
     request = request.lower()
     if verb == 'GET':
-        return self.handle_api_1_0_get_request(request, values)
+        return handle_api_1_0_get_request(request, values)
     if verb == 'POST':
-        return self.handle_api_1_0_post_request(request, values)
+        return handle_api_1_0_post_request(request, values)
     if verb == 'DELETE':
-        return self.handle_api_1_0_delete_request(request, values)
+        return handle_api_1_0_delete_request(request, values)
     return False, ""
 
 @g_flask_app.route('/api/<version>/<method>', methods = ['GET','POST','DELETE'])
@@ -92,7 +97,7 @@ def api(version, method):
 
         # Process the API request.
         if version == '1.0':
-            handled, response = api_handler(verb, method, params)
+            handled, response = handle_api_request(verb, method, params)
             if handled:
                 code = 200
             else:
@@ -108,6 +113,7 @@ def api(version, method):
 
 def main():
     global g_flask_app
+    global g_db_uri
 
     # Configure the error logger.
     logging.basicConfig(filename=ERROR_LOG, filemode='w', level=logging.DEBUG, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -135,6 +141,9 @@ def main():
     # Cleanup the arguments.
     if len(args.host) == 0:
         args.host = "localhost"
+
+    # Make a note of the database URI.
+    g_db_uri = args.database
 
     # Create the app object. It contains all the functionality.
     print(f"The app is running on http://{args.host}:{args.port}")

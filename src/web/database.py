@@ -133,7 +133,7 @@ class AppMongoDatabase(Database):
     indoor_air_quality = None
 
     def __init__(self):
-        Database.Database.__init__(self)
+        Database.__init__(self)
 
     def connect(self, database_url):
         """Connects/creates the database."""
