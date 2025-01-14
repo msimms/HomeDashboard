@@ -144,7 +144,7 @@ class AppMongoDatabase(Database):
                 raise DatabaseException("Could not connect to MongoDB.")
 
             # Get a handle to the database.
-            self.database = self.conn['status']
+            self.database = self.conn['statusdb']
             if self.database is None:
                 raise DatabaseException("Could not connect to MongoDB.")
 
@@ -281,3 +281,16 @@ class AppMongoDatabase(Database):
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
         return False
+
+    #
+    # Indoor air quality methods
+    #
+
+    def retrieve_air_quality(self):
+        """Retrieve method for air quality measurements."""
+        try:
+            return self.indoor_air_quality.find({}, {"_id": 0})
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return []

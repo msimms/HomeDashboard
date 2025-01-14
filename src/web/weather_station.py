@@ -48,7 +48,9 @@ def handle_indoor_air_request(values):
     global g_db_uri
     db = database.AppMongoDatabase()
     db.connect(g_db_uri)
-    return False, ""
+    readings = list(db.retrieve_air_quality())
+    result = json.dumps(readings)
+    return True, result
 
 def handle_api_1_0_get_request(request, values):
     """Called to parse a version 1.0 API GET request."""
