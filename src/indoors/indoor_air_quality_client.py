@@ -80,7 +80,7 @@ def read_from_tty(callback, device: str, baud_rate: int = 9600, timeout: int = 1
     :param timeout: The read timeout in seconds (default is 1 second).
     """
     try:
-        keys = ['co2_ppm', 'temp_c', 'humidity']
+        keys = ['co2_ppm', 'temp_c', 'humidity', 'voc', 'voc_index']
         with serial.Serial(device, baud_rate, timeout=timeout) as ser:
             print(f"Listening to {device} at {baud_rate} baud.")
             while True:
