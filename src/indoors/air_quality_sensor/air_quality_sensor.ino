@@ -5,8 +5,10 @@
 #include <Arduino.h>
 #include <SensirionI2CScd4x.h>
 #include <Wire.h>
+#include <Adafruit_SGP40.h>
 
-SensirionI2CScd4x scd4x;
+SensirionI2CScd4x scd4x; // CO2, temp, and humidity
+Adafruit_SGP40 sgp; // VOC
 
 // The "pin" for the onboard LED.
 int LED = 13;
@@ -43,7 +45,7 @@ void setup() {
 
   scd4x.begin(Wire);
 
-  // stop potentially previously started measurement
+  // Stop potentially previously started measurement.
   error = scd4x.stopPeriodicMeasurement();
   if (error) {
     Serial.print("Error: Failed to execute stopPeriodicMeasurement(): ");
@@ -51,12 +53,17 @@ void setup() {
     Serial.println(errorMessage);
   }
 
-  // Start Measurement
+  // Start Measurement.
   error = scd4x.startPeriodicMeasurement();
   if (error) {
     Serial.print("Error: Failed to execute startPeriodicMeasurement(): ");
     errorToString(error, errorMessage, 256);
     Serial.println(errorMessage);
+  }
+
+  // Start the SGP VOC sensor.
+  if (!sgp.begin()){
+    Serial.println("SGP40 sensor not found :(");
   }
 
   // Force a short wait before attempting the first read
@@ -72,7 +79,7 @@ void loop() {
   // Turn the LED on.
   digitalWrite(LED, HIGH);
 
-  // Read the measurement.
+  // Read the CO2, temperature, and humidity measurements.
   uint16_t co2;
   float temperature;
   float humidity;
@@ -84,11 +91,20 @@ void loop() {
   } else if (co2 == 0) {
     Serial.println("Error: Invalid sample detected, skipping.");
   } else {
+    // Read the raw VOC measurement as well as the temperature and humidity compensated version.
+    uint16_t sraw = sgp.measureRaw(temperature, humidity);
+    int32_t voc_index = sgp.measureVocIndex(temperature, humidity);
+
+    // Output:
     Serial.print(co2);
     Serial.print("\t");
     Serial.print(temperature);
     Serial.print("\t");
-    Serial.println(humidity);
+    Serial.print(humidity);
+    Serial.print("\t");
+    Serial.print(sraw);
+    Serial.print("\t");
+    Serial.println(voc_index);
   }
 
   // Turn the LED off.
