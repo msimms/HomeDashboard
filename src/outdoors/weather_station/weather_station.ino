@@ -1,23 +1,21 @@
-#include <DHT11.h>
+#include <AM2315C.h>
 #include <SPI.h>
 #include <Wire.h>
 #include <WiFiNINA.h>
 #include "arduino_secrets.h" 
 
-#define DHT11_PIN 7
 #define MIN_VOLTAGE 0.4
-#define AM2315_I2CADDR 0x5C
-#define AM2315_READREG 0x03
 
+// Wifi
 char ssid[] = SECRET_SSID;            // your network SSID (name)
 char pass[] = SECRET_PASS;            // your network password (use for WPA, or use as key for WEP)
-int status = WL_IDLE_STATUS;          // the Wi-Fi radio's status
-int ledState = LOW;                   // ledState used to set the LED
-unsigned long previousMillisInfo = 0; // will store last time Wi-Fi information was updated
-unsigned long previousMillisLED = 0;  // will store the last time LED was updated
-const int intervalInfo = 5000;        // interval at which to update the board information
+int wifiStatus = WL_IDLE_STATUS;      // the Wi-Fi radio's status
 
-DHT11 dht11(DHT11_PIN);
+// The "pin" for the onboard LED.
+int LED = 13;
+
+// Temperature and humidity sensor.
+AM2315C DHT;
 
 // RED    -------- | VDD             |
 // YELLOW -------- | SDA    AM2315C  |
@@ -54,65 +52,19 @@ void read_anemometer() {
   Serial.println(" mph)");
 }
 
-/// @function read_temperature_and_humidity_from_dht11
-void read_temperature_and_humidity_from_dht11() {
-  Serial.println("Reading temperature and humidity...");
-
-  int temperature = 0;
-  int humidity = 0;
-
-  // Attempt to read the temperature and humidity values from the DHT11 sensor.
-  int result = dht11.readTemperatureHumidity(temperature, humidity);
-
-  // Check the results of the readings.
-  // If the reading is successful, print the temperature and humidity values.
-  // If there are errors, print the appropriate error messages.
-  if (result == 0) {
-      Serial.print("Temperature: ");
-      Serial.print(temperature);
-      Serial.print(" °C\tHumidity: ");
-      Serial.print(humidity);
-      Serial.println(" %");
-  } else {
-      // Print error message based on the error code.
-      Serial.println(DHT11::getErrorString(result));
-  }
-}
-
 /// @function read_temperature_and_humidity_from_am2315
-void read_temperature_and_humidity_from_am2315() {
+void read_temperature_and_humidity_from_am2315c() {
   Serial.println("Reading temperature and humidity...");
 
-  float temperature, humidity;
+  int status = DHT.read();
+  float temperature = DHT.getTemperature();
+  float humidity = DHT.getHumidity();
 
-  uint8_t reply[10];
-  uint8_t sreply[10];
+  // Format the output.
+  char buff[32];
+  snprintf(buff, sizeof(buff) - 1, "%f\t%f", temperature, humidity);
 
-  // Wake up the sensor.
-  Serial.println("A");
-  Wire.beginTransmission(AM2315_I2CADDR);
-  delay(2);
-  uint8_t end1 = Wire.endTransmission();
-
-  // Send the read command.
-  Wire.beginTransmission(AM2315_I2CADDR);
-  uint8_t write1 = Wire.write(AM2315_READREG);
-  uint8_t write2 = Wire.write(0x00);  // start at address 0x0
-  uint8_t write3 = Wire.write(4);  // request 4 bytes data
-  uint8_t end2 = Wire.endTransmission();
-  
-  // Add delay between request and actual read.
-  delay(10);
-
-  // Read the response.
-  uint8_t request1 = Wire.requestFrom(AM2315_I2CADDR, 8);
-  for (uint8_t i=0; i<8; i++) {
-    reply[i] = Wire.read();
-    sreply[i] = reply[i];
-  }
-  
-  if (reply[0] != AM2315_READREG && reply[1] != 4) {
-  }
+  Serial.println(buff);
 }
 
 /// @function setup_wifi
@@ -123,10 +75,10 @@ void setup_wifi() {
   pinMode(LED_BUILTIN, OUTPUT);
 
   // attempt to connect to Wi-Fi network:
-  while (status != WL_CONNECTED) {
+  while (wifiStatus != WL_CONNECTED) {
     Serial.print("Attempting to connect to network: ");
     Serial.println(ssid);
-    status = WiFi.begin(ssid, pass);
+    wifiStatus = WiFi.begin(ssid, pass);
 
     // Wait 10 seconds for connection.
     delay(10000);
@@ -165,27 +117,10 @@ void setup_anemometer() {
 void setup_am2315() {
   Serial.println("Setting up the AM2315...");
 
-  // Configure the internal pullup resistors.
-  pinMode(A4, INPUT_PULLUP); // Enable internal pull-up resistor on pin A4
-  pinMode(A5, INPUT_PULLUP); // Enable internal pull-up resistor on pin A5
+  Wire.begin();
+  DHT.begin();
 
-  // Wake up the AM2315.
-  Wire.beginTransmission(AM2315_I2CADDR);
-  Wire.write(AM2315_READREG);
-  Serial.println("0");
-  Wire.endTransmission();
-  Serial.println("0");
-
-  // Add delay between request and actual read.
-  delay(50);
-  Serial.println("0");
-
-  Wire.beginTransmission(AM2315_I2CADDR);
-  Wire.write(AM2315_READREG);
-  Wire.write(0x00); // start at address 0x0
-  Wire.write(4); // request 4 bytes data
-  Wire.endTransmission();
-  Serial.println("0");
+  delay(1000);
 
   Serial.println("Done setting up the AM2315...");
 }
@@ -199,15 +134,22 @@ void setup() {
   }
 
   // Initialize the anemometer.
-  setup_anemometer();
+  //setup_anemometer();
 
   // Initialize the AM2315.
-  //setup_am2315();
+  setup_am2315();
 }
 
 /// @function loop
 void loop() {
-  read_anemometer();
-  //read_temperature_and_humidity_from_am2315();
-  delay(5000);
+  // Turn the LED on.
+  digitalWrite(LED, HIGH);
+
+  //read_anemometer();
+  read_temperature_and_humidity_from_am2315c();
+
+  // Turn the LED off.
+  digitalWrite(LED, LOW);
+
+  delay(10000);
 }
