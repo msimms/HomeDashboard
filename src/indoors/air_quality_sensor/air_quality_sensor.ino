@@ -26,6 +26,7 @@ Adafruit_SGP40 sgp; // VOC
 // The "pin" for the onboard LED.
 int LED = 13;
 
+/// @function updateDisplay
 void updateDisplay(char* msg) {
   display.clearDisplay();
 
