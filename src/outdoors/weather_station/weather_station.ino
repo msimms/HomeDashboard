@@ -139,6 +139,9 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
+  // Initialize wifi.
+  setup_wifi();
+
   // Initialize the anemometer.
   setup_anemometer();
 
@@ -167,10 +170,10 @@ void loop() {
   digitalWrite(LED, LOW);
 
   // Format the output.
-  char buff[128];
+  char buff[256];
   snprintf(buff, sizeof(buff) - 1, "{\"wind speed ms\": %f, \"temperature\": %f, \"humidity\": %f, \"moisture_sensor_1\": %f, \"moisture_sensor_2\": %f}", wind_speed_ms, temp_c, humidity, moisture1, moisture2);
 
   Serial.println(buff);
 
-  delay(10000);
+  delay(60000);
 }
