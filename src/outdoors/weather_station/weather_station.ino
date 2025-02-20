@@ -13,6 +13,9 @@
 #define MIN_WIND_SPEED 0.2  // meters per sec
 #define MAX_WIND_SPEED 32.4 // meters per sec
 
+#define MOISTURE_SENSOR_1 A1
+#define MOISTURE_SENSOR_2 A2
+
 // Wifi
 char ssid[] = SECRET_SSID;       // your network SSID (name)
 char pass[] = SECRET_PASS;       // your network password (use for WPA, or use as key for WEP)
@@ -51,6 +54,23 @@ void read_temperature_and_humidity_from_am2315c(float* temp_c, float* humidity) 
   int status = DHT.read();
   *temp_c = DHT.getTemperature();
   *humidity = DHT.getHumidity();
+}
+
+/// @function read_soil_moisture_sensor
+float read_soil_moisture_sensor(pin_size_t pin) {
+  float sensor_value = analogRead(pin);
+  float percent_dry = sensor_value / 1023;
+  return percent_dry;
+}
+
+/// @function read_soil_moisture_sensor_1
+float read_soil_moisture_sensor_1() {
+  return read_soil_moisture_sensor(MOISTURE_SENSOR_1);
+}
+
+/// @function read_soil_moisture_sensor_2
+float read_soil_moisture_sensor_2() {
+  return read_soil_moisture_sensor(MOISTURE_SENSOR_2);
 }
 
 /// @function setup_wifi
@@ -131,17 +151,24 @@ void loop() {
   // Turn the LED on.
   digitalWrite(LED, HIGH);
 
+  // Read wind speed.
   float wind_speed_ms = read_anemometer();
+
+  // Read temperature and humidity.
   float temp_c = 0.0;
   float humidity = 0.0;
   read_temperature_and_humidity_from_am2315c(&temp_c, &humidity);
+
+  // Read soil moisture sensor.
+  float moisture1 = read_soil_moisture_sensor_1();
+  float moisture2 = read_soil_moisture_sensor_2();
 
   // Turn the LED off.
   digitalWrite(LED, LOW);
 
   // Format the output.
   char buff[128];
-  snprintf(buff, sizeof(buff) - 1, "{\"wind speed ms\": %f, \"temperature\": %f, \"humidity\": %f}", wind_speed_ms, temp_c, humidity);
+  snprintf(buff, sizeof(buff) - 1, "{\"wind speed ms\": %f, \"temperature\": %f, \"humidity\": %f, \"moisture_sensor_1\": %f, \"moisture_sensor_2\": %f}", wind_speed_ms, temp_c, humidity, moisture1, moisture2);
 
   Serial.println(buff);
 
