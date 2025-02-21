@@ -17,9 +17,8 @@
 #define MOISTURE_SENSOR_2 A2
 
 // Wifi
-char ssid[] = SECRET_SSID;       // your network SSID (name)
-char pass[] = SECRET_PASS;       // your network password (use for WPA, or use as key for WEP)
-int wifi_status = WL_IDLE_STATUS; // the Wi-Fi radio's status
+char ssid[] = SECRET_SSID; // your network SSID (name)
+char pass[] = SECRET_PASS; // your network password (use for WPA, or use as key for WEP)
 
 // The "pin" for the onboard LED.
 int LED = 13;
@@ -77,17 +76,15 @@ float read_soil_moisture_sensor_2() {
 void setup_wifi() {
   Serial.println("Setting up Wifi...");
 
-  // Set the LED as output.
-  pinMode(LED_BUILTIN, OUTPUT);
-
   // Attempt to connect to Wi-Fi network:
+  int wifi_status = WL_IDLE_STATUS;
   while (wifi_status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to network: ");
+    Serial.print("Attempting to connect to the network: ");
     Serial.println(ssid);
     wifi_status = WiFi.begin(ssid, pass);
 
-    // Wait 10 seconds for connection.
-    delay(10000);
+    // Wait a few seconds for connection.
+    delay(5000);
   }
 
   // You're connected now, so print out the data.
@@ -110,6 +107,25 @@ void print_wifi_status() {
   Serial.print("Signal strength (RSSI):");
   Serial.print(rssi);
   Serial.println(" dBm");
+}
+
+/// @function post_status
+void post_status(String str) {
+  if (WiFi.status() == WL_CONNECTED) {
+    WiFiClient client;
+
+    if (client.connect(STATUS_URL, STATUS_PORT)) {
+      client.println(str);
+    } else {
+      Serial.println("Error connecting to the server!");
+      print_wifi_status();
+    }
+    client.stop();
+  }
+  else {
+    Serial.println("Not connected to Wifi!");
+    print_wifi_status();
+  }
 }
 
 /// @function setup_anemometer
@@ -138,6 +154,9 @@ void setup() {
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
+
+  // Set the LED as output.
+  pinMode(LED_BUILTIN, OUTPUT);
 
   // Initialize wifi.
   setup_wifi();
@@ -172,8 +191,10 @@ void loop() {
   // Format the output.
   char buff[256];
   snprintf(buff, sizeof(buff) - 1, "{\"wind speed ms\": %f, \"temperature\": %f, \"humidity\": %f, \"moisture_sensor_1\": %f, \"moisture_sensor_2\": %f}", wind_speed_ms, temp_c, humidity, moisture1, moisture2);
-
   Serial.println(buff);
 
-  delay(60000);
+  // Send.
+  post_status(buff);
+
+  delay(600000);
 }
