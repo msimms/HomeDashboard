@@ -114,8 +114,10 @@ void post_status(String str) {
   if (WiFi.status() == WL_CONNECTED) {
     WiFiClient client;
 
+    Serial.println("Sending status...");
     if (client.connect(STATUS_URL, STATUS_PORT)) {
       client.println(str);
+      Serial.println("Status sent!");
     } else {
       Serial.println("Error connecting to the server!");
       print_wifi_status();
@@ -151,9 +153,6 @@ void setup_am2315() {
 void setup() {
   // Initialize serial and wait for port to open.
   Serial.begin(9600);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
 
   // Set the LED as output.
   pinMode(LED_BUILTIN, OUTPUT);
