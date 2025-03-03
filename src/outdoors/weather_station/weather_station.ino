@@ -1,3 +1,5 @@
+// Created by Michael Simms
+
 #include <AM2315C.h>
 #include <SPI.h>
 #include <Wire.h>
