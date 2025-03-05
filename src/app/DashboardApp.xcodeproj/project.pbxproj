@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		27EF28062D73DF9A008334AA /* MongoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 27EF28052D73DF9A008334AA /* MongoSwift */; };
+		27EF285A2D77DB3A008334AA /* LineGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27EF28592D77DB3A008334AA /* LineGraphView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,6 +32,7 @@
 		27D36F8D2D6A474C009060FB /* DashboardApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DashboardApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		27D36F9E2D6A474E009060FB /* DashboardAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DashboardAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		27D36FA82D6A474E009060FB /* DashboardAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DashboardAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		27EF28592D77DB3A008334AA /* LineGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LineGraphView.swift; path = SimpleSwiftCharts/LineGraphView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -80,6 +82,7 @@
 		27D36F842D6A474C009060FB = {
 			isa = PBXGroup;
 			children = (
+				27EF28582D77DB08008334AA /* Charts */,
 				27D36F8F2D6A474C009060FB /* App */,
 				27D36FA12D6A474E009060FB /* Tests */,
 				27D36FAB2D6A474E009060FB /* UITests */,
@@ -95,6 +98,14 @@
 				27D36FA82D6A474E009060FB /* DashboardAppUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		27EF28582D77DB08008334AA /* Charts */ = {
+			isa = PBXGroup;
+			children = (
+				27EF28592D77DB3A008334AA /* LineGraphView.swift */,
+			);
+			path = Charts;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -245,6 +256,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27EF285A2D77DB3A008334AA /* LineGraphView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -426,10 +438,11 @@
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=xros*]" = "com.mjs-software.Dashboard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Debug;
@@ -468,10 +481,11 @@
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=xros*]" = "com.mjs-software.Dashboard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Release;

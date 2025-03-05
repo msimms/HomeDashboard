@@ -6,7 +6,9 @@
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
+	private var common = CommonApp.shared
+
+	var body: some View {
         VStack {
             Image(systemName: "globe")
                 .imageScale(.large)
