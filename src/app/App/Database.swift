@@ -10,7 +10,8 @@ import NIO
 class Database {
 	private var client: MongoClient?
 	private var database: MongoDatabase?
-	
+
+	/// Attempts to connect to the database with the given URL and select the database with the given name.
 	func connect(url: String, db_name: String) async {
 		do {
 			let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
