@@ -12,7 +12,7 @@ class CollectionFactory {
 	/// Constructor
 	init() {
 	}
-	
+
 	func createHandler(name: String) throws -> Collection {
 		if name.caseInsensitiveCompare("indoor_air_quality") == .orderedSame {
 			return IndoorAirQualityCollection()

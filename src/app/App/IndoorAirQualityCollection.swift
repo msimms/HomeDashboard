@@ -4,7 +4,10 @@
 //
 
 class IndoorAirQualityCollection : Collection {
-	init() {
+	override init() {
 		super.init(name: "indoor_air_quality")
+	}
+	required init(from decoder: any Decoder) throws {
+		fatalError("init(from:) has not been implemented")
 	}
 }

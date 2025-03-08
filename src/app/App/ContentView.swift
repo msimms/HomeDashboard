@@ -6,15 +6,19 @@
 import SwiftUI
 
 struct ContentView: View {
-	private var common = CommonApp.shared
-
 	var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
+		VStack(alignment: .center) {
+			if CommonApp.shared.collections.count > 0 {
+				List {
+					ForEach(CommonApp.shared.collections) { item in
+						CollectionView(collection: item)
+					}
+				}
+			}
+			else {
+				Text("No Data")
+			}
+		}
         .padding()
     }
 }

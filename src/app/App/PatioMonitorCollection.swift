@@ -4,7 +4,10 @@
 //
 
 class PatioMonitorCollection : Collection {
-	init() {
+	override init() {
 		super.init(name: "patio_monitor")
+	}
+	required init(from decoder: any Decoder) throws {
+		fatalError("init(from:) has not been implemented")
 	}
 }

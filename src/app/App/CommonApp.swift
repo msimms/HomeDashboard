@@ -16,7 +16,7 @@ class CommonApp : ObservableObject {
 
 	private var database = Database()
 	private var collectionFactory = CollectionFactory()
-	private var collectionHandlers = Array<Collection>()
+	@Published var collections: Array<Collection> = []
 
 	/// Singleton constructor
 	private init() {
@@ -30,7 +30,7 @@ class CommonApp : ObservableObject {
 			for collection in collections {
 				do {
 					let handler = try collectionFactory.createHandler(name: collection)
-					collectionHandlers.append(handler)
+					self.collections.append(handler)
 				}
 				catch {
 				}
