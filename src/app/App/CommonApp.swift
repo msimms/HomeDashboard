@@ -29,7 +29,11 @@ class CommonApp : ObservableObject {
 			let collections = await self.database.listCollections()
 			for collection in collections {
 				do {
+
+					// Instantiate the handler and retrieve all the data.
 					let handler = try collectionFactory.createHandler(name: collection)
+					handler.retrieve(database: self.database)
+
 					self.collections.append(handler)
 				}
 				catch {

@@ -6,6 +6,8 @@
 import Foundation
 
 class Collection : Codable, Identifiable, Hashable, Equatable, ObservableObject {
+	@Published var data: Array<(UInt64, Double)> = []
+
 	enum CodingKeys: CodingKey {
 		case name
 	}
@@ -28,5 +30,15 @@ class Collection : Codable, Identifiable, Hashable, Equatable, ObservableObject 
 	/// @brief Equatable overrides
 	static func == (lhs: Collection, rhs: Collection) -> Bool {
 		return lhs.name == rhs.name
+	}
+
+	/// @brief Populates the data array.
+	func retrieve(database: Database) {
+	}
+	
+	func update(ts: UInt64, value: Double) {
+		DispatchQueue.main.async {
+			self.data.append((ts, value))
+		}
 	}
 }

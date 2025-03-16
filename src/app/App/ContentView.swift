@@ -6,17 +6,12 @@
 import SwiftUI
 
 struct ContentView: View {
+	@StateObject var app = CommonApp.shared
+	
 	var body: some View {
 		VStack(alignment: .center) {
-			if CommonApp.shared.collections.count > 0 {
-				List {
-					ForEach(CommonApp.shared.collections) { item in
-						CollectionView(collection: item)
-					}
-				}
-			}
-			else {
-				Text("No Data")
+			ForEach(app.collections) { item in
+				CollectionView(collection: item)
 			}
 		}
         .padding()

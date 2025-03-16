@@ -7,23 +7,26 @@ import SwiftUI
 
 struct CollectionView: View {
 	@ObservedObject var collection: Collection
-	var title: String = ""
 	var yLabel: String = ""
-	var data: Array<(UInt64, Double)> = []
 	var color: Color = Color.red
-	var formatter: ((_ num: Double) -> String)?
 
 	func formatElapsedTime(numSeconds: Double) -> String {
-		if self.data.count > 0 {
-			let elapsedSecs = numSeconds - Double(self.data.first!.0)
+		if self.collection.data.count > 0 {
+			let elapsedSecs = numSeconds - Double(self.collection.data.first!.0)
 			return StringUtils.formatAsHHMMSS(numSeconds: elapsedSecs)
 		}
 		return ""
 	}
 
+	func formatDouble(value: Double) -> String {
+		return String(format: "%0.1f", value)
+	}
+
 	var body: some View {
 		VStack(alignment: .center) {
-			LineGraphView(points: self.data, color: self.color, xFormatter: self.formatElapsedTime, yFormatter: self.formatter)
+			Text(self.collection.name)
+				.bold()
+			LineGraphView(points: self.collection.data, color: self.color, xFormatter: self.formatElapsedTime, yFormatter: self.formatDouble)
 		}
 		.padding()
 	}
