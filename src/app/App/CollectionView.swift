@@ -18,6 +18,15 @@ struct CollectionView: View {
 		return ""
 	}
 
+	func formatDate(ts: Double) -> String {
+		let dateFormatter = DateFormatter()
+		dateFormatter.dateStyle = .short
+		dateFormatter.timeStyle = .short
+		
+		let formattedDate = dateFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(ts)))
+		return formattedDate
+	}
+
 	func formatDouble(value: Double) -> String {
 		return String(format: "%0.1f", value)
 	}
@@ -26,7 +35,7 @@ struct CollectionView: View {
 		VStack(alignment: .center) {
 			Text(self.collection.name)
 				.bold()
-			LineGraphView(points: self.collection.data, color: self.color, xFormatter: self.formatElapsedTime, yFormatter: self.formatDouble)
+			LineGraphView(points: self.collection.data, color: self.color, xFormatter: self.formatDate, yFormatter: self.formatDouble)
 		}
 		.padding()
 	}
