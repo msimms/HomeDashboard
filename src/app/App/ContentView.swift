@@ -9,12 +9,11 @@ struct ContentView: View {
 	@StateObject var app = CommonApp.shared
 	
 	var body: some View {
-		VStack(alignment: .center) {
+		ScrollView() {
 			ForEach(app.collections) { item in
 				CollectionView(collection: item)
 			}
 		}
-        .padding()
     }
 }
 

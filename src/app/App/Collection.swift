@@ -6,7 +6,7 @@
 import Foundation
 
 class Collection : Codable, Identifiable, Hashable, Equatable, ObservableObject {
-	@Published var data: Array<(UInt64, Double)> = []
+	@Published var data: [String: Array<(UInt64, Double)>] = [:]
 
 	enum CodingKeys: CodingKey {
 		case name
@@ -36,9 +36,13 @@ class Collection : Codable, Identifiable, Hashable, Equatable, ObservableObject 
 	func retrieve(database: Database) {
 	}
 	
-	func update(ts: UInt64, value: Double) {
+	/// @brief 
+	func update(data_key: String, ts: UInt64, value: Double) {
 		DispatchQueue.main.async {
-			self.data.append((ts, value))
+			if self.data[data_key] == nil {
+				self.data[data_key] = []
+			}
+			self.data[data_key]?.append((ts, value))
 		}
 	}
 }

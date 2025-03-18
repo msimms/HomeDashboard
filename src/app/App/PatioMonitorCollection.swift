@@ -17,19 +17,19 @@ class PatioMonitorCollection : Collection {
 			await database.fetchDocumentsWithTimestampAtLeast(collection_name: self.name, timestamp: 0, handler: { doc in
 				if let ts = doc["ts"]?.doubleValue {
 					if let wind_speed_ms = doc["wind speed ms"]?.doubleValue {
-						//self.update(ts: UInt64(ts), value: wind_speed_ms)
+						self.update(data_key: "Wind Speed (m/s)", ts: UInt64(ts), value: wind_speed_ms)
 					}
 					if let temperature = doc["temperature"]?.doubleValue {
-						self.update(ts: UInt64(ts), value: temperature)
+						self.update(data_key: "Temperature (C)", ts: UInt64(ts), value: temperature)
 					}
 					if let humidity = doc["humidity"]?.doubleValue {
-						//self.update(ts: UInt64(ts), value: humidity)
+						self.update(data_key: "Humidity (%)", ts: UInt64(ts), value: humidity)
 					}
 					if let moisture_sensor_1 = doc["moisture_sensor_1"]?.doubleValue {
-						//self.update(ts: UInt64(ts), value: moisture_sensor_1)
+						self.update(data_key: "Moisture Sensor 1", ts: UInt64(ts), value: moisture_sensor_1)
 					}
 					if let moisture_sensor_2 = doc["moisture_sensor_2"]?.doubleValue {
-						//self.update(ts: UInt64(ts), value: moisture_sensor_2)
+						self.update(data_key: "Moisture Sensor 2", ts: UInt64(ts), value: moisture_sensor_2)
 					}
 				}
 			})

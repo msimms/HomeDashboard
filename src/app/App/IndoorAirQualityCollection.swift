@@ -17,13 +17,13 @@ class IndoorAirQualityCollection : Collection {
 			await database.fetchDocumentsWithTimestampAtLeast(collection_name: self.name, timestamp: 0, handler: { doc in
 				if let ts = doc["ts"]?.doubleValue {
 					if let temp_c = doc["temp_c"]?.doubleValue {
-						self.update(ts: UInt64(ts), value: temp_c)
+						self.update(data_key: "Temperature (C)", ts: UInt64(ts), value: temp_c)
 					}
 					if let humidity = doc["humidity"]?.doubleValue {
-						//self.update(ts: UInt64(ts), value: humidity)
+						self.update(data_key: "Humidity (%)", ts: UInt64(ts), value: humidity)
 					}
 					if let co2_ppm = doc["co2_ppm"]?.int32Value {
-						//self.update(ts: UInt64(ts), value: co2_ppm)
+						self.update(data_key: "CO2 (PPM)", ts: UInt64(ts), value: Double(co2_ppm))
 					}
 				}
 			})

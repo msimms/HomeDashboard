@@ -10,14 +10,6 @@ struct CollectionView: View {
 	var yLabel: String = ""
 	var color: Color = Color.red
 
-	func formatElapsedTime(numSeconds: Double) -> String {
-		if self.collection.data.count > 0 {
-			let elapsedSecs = numSeconds - Double(self.collection.data.first!.0)
-			return StringUtils.formatAsHHMMSS(numSeconds: elapsedSecs)
-		}
-		return ""
-	}
-
 	func formatDate(ts: Double) -> String {
 		let dateFormatter = DateFormatter()
 		dateFormatter.dateStyle = .short
@@ -35,7 +27,12 @@ struct CollectionView: View {
 		VStack(alignment: .center) {
 			Text(self.collection.name)
 				.bold()
-			LineGraphView(points: self.collection.data, color: self.color, xFormatter: self.formatDate, yFormatter: self.formatDouble)
+			ForEach(self.collection.data.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
+				Section(header: Text(key)) {
+					LineGraphView(points: value, color: self.color, xFormatter: self.formatDate, yFormatter: self.formatDouble)
+				}
+				.frame(height: 256)
+			}
 		}
 		.padding()
 	}
