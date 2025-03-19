@@ -6,7 +6,7 @@
 import Foundation
 
 class StringUtils {
-
+	
 	/// @brief Utility function for converting a number of seconds into HH:MMSS format
 	static func formatAsHHMMSS(numSeconds: Double) -> String {
 		let SECS_PER_DAY  = 86400
@@ -29,5 +29,18 @@ class StringUtils {
 			return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
 		}
 		return String(format: "%02d:%02d", minutes, seconds)
+	}
+	
+	static func formatDate(ts: Double) -> String {
+		let dateFormatter = DateFormatter()
+		dateFormatter.dateStyle = .short
+		dateFormatter.timeStyle = .short
+		
+		let formattedDate = dateFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(ts)))
+		return formattedDate
+	}
+	
+	static func formatDouble(value: Double) -> String {
+		return String(format: "%0.1f", value)
 	}
 }
