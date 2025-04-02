@@ -25,6 +25,12 @@ class IndoorAirQualityCollection : Collection {
 					if let co2_ppm = doc["co2_ppm"]?.int32Value {
 						self.update(data_key: "CO2 (PPM)", ts: UInt64(ts), value: Double(co2_ppm))
 					}
+					if let voc = doc["voc"]?.int32Value {
+						self.update(data_key: "VOC", ts: UInt64(ts), value: Double(voc))
+					}
+					if let voc_index = doc["voc_index"]?.int32Value {
+						self.update(data_key: "VOC Index", ts: UInt64(ts), value: Double(voc_index))
+					}
 				}
 			})
 		}
