@@ -12,13 +12,15 @@ struct CollectionView: View {
 
 	var body: some View {
 		VStack(alignment: .center) {
-			Text(self.collection.name)
+			Text(self.collection.displayName)
+				.font(.system(size: 24))
 				.bold()
 			ForEach(self.collection.data.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
 				Section(header: Text(key)) {
 					LineGraphView(points: value, color: self.color, xFormatter: StringUtils.formatDate, yFormatter: StringUtils.formatDouble)
+						.padding()
 				}
-				.frame(height: 256)
+				.frame(height: 320)
 			}
 		}
 		.padding()

@@ -13,13 +13,16 @@ class Collection : Codable, Identifiable, Hashable, Equatable, ObservableObject 
 	}
 
 	var name: String = ""
+	var displayName: String = ""
 
 	/// Constructor
 	init() {
 		self.name = ""
+		self.displayName = ""
 	}
-	init(name: String) {
+	init(name: String, displayName: String) {
 		self.name = name
+		self.displayName = displayName
 	}
 
 	/// @brief Hashable overrides

@@ -7,11 +7,21 @@ import SwiftUI
 
 struct ContentView: View {
 	@StateObject var app = CommonApp.shared
-	
+	@State private var selectedItem = ""
+
 	var body: some View {
-		ScrollView() {
-			ForEach(app.collections) { item in
-				CollectionView(collection: item)
+		TabView(selection: $selectedItem) {
+			ForEach(self.app.collections) { item in
+				NavigationStack() {
+					ScrollView() {
+						CollectionView(collection: item)
+							.padding()
+					}
+				}
+				.tabItem {
+					Text(item.displayName)
+					Image(systemName: "house")
+				}.tag(item.name)
 			}
 		}
     }
