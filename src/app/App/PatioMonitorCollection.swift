@@ -7,7 +7,7 @@ import Foundation
 
 class PatioMonitorCollection : Collection {
 	override init() {
-		super.init(name: "patio_monitor", displayName: "Patio Monitor")
+		super.init(name: "patio_monitor", displayName: "Patio Monitor", symbolName: "house")
 	}
 	required init(from decoder: any Decoder) throws {
 		fatalError("init(from:) has not been implemented")

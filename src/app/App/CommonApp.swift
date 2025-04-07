@@ -34,7 +34,9 @@ class CommonApp : ObservableObject {
 					let handler = try collectionFactory.createHandler(name: collection)
 					handler.retrieve(database: self.database)
 
-					self.collections.append(handler)
+					await MainActor.run {
+						self.collections.append(handler)
+					}
 				}
 				catch {
 				}

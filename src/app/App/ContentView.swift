@@ -8,20 +8,35 @@ import SwiftUI
 struct ContentView: View {
 	@StateObject var app = CommonApp.shared
 	@State private var selectedItem = ""
+	@State private var addedSummaryView = false
 
 	var body: some View {
 		TabView(selection: $selectedItem) {
-			ForEach(self.app.collections) { item in
+			
+			// Add the Summary View.
+			NavigationStack() {
+				ScrollView() {
+					SummaryView()
+						.padding()
+				}
+			}
+			.tabItem {
+				Text("Summary")
+				Image(systemName: "clipboard")
+			}.tag("Summary")
+
+			// Add the view for each collection.
+			ForEach(self.app.collections) { collection in
 				NavigationStack() {
 					ScrollView() {
-						CollectionView(collection: item)
+						CollectionView(collection: collection)
 							.padding()
 					}
 				}
 				.tabItem {
-					Text(item.displayName)
-					Image(systemName: "house")
-				}.tag(item.name)
+					Text(collection.displayName)
+					Image(systemName: collection.symbolName)
+				}.tag(collection.name)
 			}
 		}
     }

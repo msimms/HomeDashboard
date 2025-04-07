@@ -14,15 +14,17 @@ class Collection : Codable, Identifiable, Hashable, Equatable, ObservableObject 
 
 	var name: String = ""
 	var displayName: String = ""
+	var symbolName: String = "questionmark"
 
 	/// Constructor
 	init() {
 		self.name = ""
 		self.displayName = ""
 	}
-	init(name: String, displayName: String) {
+	init(name: String, displayName: String, symbolName: String) {
 		self.name = name
 		self.displayName = displayName
+		self.symbolName = symbolName
 	}
 
 	/// @brief Hashable overrides
@@ -35,12 +37,12 @@ class Collection : Codable, Identifiable, Hashable, Equatable, ObservableObject 
 		return lhs.name == rhs.name
 	}
 
-	/// @brief Populates the data array.
+	/// @brief Populates the data array. To be overriden by child classes.
 	func retrieve(database: Database) {
 	}
 	
-	/// @brief 
-	func update(data_key: String, ts: UInt64, value: Double) {
+	/// @brief Utility function for child classes to update the published data array.
+	internal func update(data_key: String, ts: UInt64, value: Double) {
 		DispatchQueue.main.async {
 			if self.data[data_key] == nil {
 				self.data[data_key] = []
