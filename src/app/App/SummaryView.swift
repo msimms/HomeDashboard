@@ -6,18 +6,29 @@
 import SwiftUI
 
 struct CollectionSummaryView: View {
-	let collection: Collection
+	@StateObject var collection: Collection
 	
 	var body: some View {
 		VStack() {
-			Text(collection.displayName)
+			Text(self.collection.displayName)
+				.font(.system(size: 24))
 				.bold()
 			ForEach(self.collection.data.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
 				if value.isEmpty {
 					Text("\(key): \"No data")
 				}
 				else {
-					Text("\(key): \(value.last?.1 ?? 0)")
+					let last = value.last!
+					let value: Double = last.1
+					let ts: UInt64 = last.0
+					let ts_str: String = StringUtils.formatDate(ts: Double(ts))
+					HStack() {
+						Text("\(key): ")
+							.bold()
+						Text("\(value, specifier: "%.2f")")
+						Text("Updated on \(ts_str)")
+							.foregroundColor(.gray)
+					}
 				}
 			}
 		}
