@@ -113,15 +113,18 @@ void print_wifi_status() {
 
 /// @function post_status
 void post_status(String str) {
-  // Reconnect, if necessary.
+  // Reconnect to the network, if necessary.
   if (WiFi.status() != WL_CONNECTED) {
     setup_wifi();
   }
 
+  // Network is connected....
   if (WiFi.status() == WL_CONNECTED) {
     WiFiClient client;
 
     Serial.println("Sending status...");
+
+    // Connect to the relay client.
     if (client.connect(STATUS_URL, STATUS_PORT)) {
       client.println(str);
       Serial.println("Status sent!");
