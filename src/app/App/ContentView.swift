@@ -38,6 +38,18 @@ struct ContentView: View {
 					Image(systemName: collection.symbolName)
 				}.tag(collection.name)
 			}
+
+			// Add the Alerts View.
+			NavigationStack() {
+				ScrollView() {
+					AlertsView()
+						.padding()
+				}
+			}
+			.tabItem {
+				Text("Summary")
+				Image(systemName: "clipboard")
+			}.tag("Summary")
 		}
     }
 }
