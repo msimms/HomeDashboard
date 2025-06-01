@@ -147,6 +147,8 @@ class AppMongoDatabase(Database):
             # Handles to the various collections.
             self.users_collection = self.database['users']
             self.indoor_air_quality = self.database['indoor_air_quality']
+            self.patio_monitor = self.database['patio_monitor']
+            self.website_status = self.database['website_status']
         except pymongo.errors.ConnectionFailure as e:
             raise DatabaseException("Could not connect to MongoDB: %s" % e)
 
@@ -286,6 +288,32 @@ class AppMongoDatabase(Database):
         """Retrieve method for air quality measurements."""
         try:
             return self.indoor_air_quality.find({}, {"_id": 0})
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return []
+
+    #
+    # Pation monitor methods
+    #
+
+    def retrieve_patio_monitor(self):
+        """Retrieve method for patio monitor measurements."""
+        try:
+            return self.patio_monitor.find({}, {"_id": 0})
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return []
+
+    #
+    # Website status methods
+    #
+
+    def retrieve_website_status(self):
+        """Retrieve method for website statuses."""
+        try:
+            return self.patio_monitor.find({}, {"_id": 0})
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
