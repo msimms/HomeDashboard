@@ -6,7 +6,7 @@
 
 <head>
 
-<title>Indoor Air Quality</title>
+<title>Dashboard</title>
 
 <link rel="stylesheet" type="text/css" href="${root_url}/css/normalize.css">
 <link rel="stylesheet" type="text/css" href="${root_url}/css/site.css">
@@ -27,8 +27,8 @@
 <script src="${root_url}/js/graphs.js"></script>
 <script>
 
-    /// @function get_readings
-    function get_readings() {
+    /// @function get_indoor_air_quality_readings
+    function get_indoor_air_quality_readings() {
         let api_url = "${root_url}/api/1.0/indoor_air"
 
         send_get_request_async(api_url, function (response_code, response_text) {
@@ -45,11 +45,45 @@
                     humidity_readings.push( { x: ts, y: record['humidity'] });
                 }
 
-                draw_graph(co2_readings, "co2_chart", "CO2", "PPM", "yellow", 250);
-                draw_graph(temp_readings, "temp_chart", "Temperature", "C", "red", 250);
-                draw_graph(humidity_readings, "humidity_chart", "Humidity", "%", "blue", 250);
+                draw_graph(co2_readings, "co2_chart", "Indoor CO2", "PPM", "yellow", 250);
+                draw_graph(temp_readings, "temp_chart", "Indoor Temperature", "C", "red", 250);
+                draw_graph(humidity_readings, "humidity_chart", "Indoor Humidity", "%", "blue", 250);
             }
         });
+    }
+
+    /// @function get_patio_monitor_readings
+    function get_patio_monitor_readings() {
+        let api_url = "${root_url}/api/1.0/patio"
+
+        send_get_request_async(api_url, function (response_code, response_text) {
+            if (response_code == 200) {
+                const records = JSON.parse(response_text);
+                var temp_readings = [];
+                var humidity_readings = [];
+                var moisture_sensor_1_readings = [];
+                var moisture_sensor_2_readings = [];
+
+                for (let record of records) {
+                    let ts = record['ts'];
+                    temp_readings.push( { x: ts, y: record['temperature'] });
+                    humidity_readings.push( { x: ts, y: record['humidity'] });
+                    moisture_sensor_1_readings.push( { x: ts, y: record['moisture_sensor_1'] });
+                    moisture_sensor_2_readings.push( { x: ts, y: record['moisture_sensor_2'] });
+                }
+
+                draw_graph(temp_readings, "temp_chart", "Patio Temperature", "C", "red", 250);
+                draw_graph(humidity_readings, "humidity_chart", "Patio Humidity", "%", "blue", 250);
+                draw_graph(moisture_sensor_1_readings, "moisture_sensor_1_chart", "Moisture Sensor #1", "%", "light blue", 250);
+                draw_graph(moisture_sensor_2_readings, "moisture_sensor_2_chart", "Moisture Sensor #2", "%", "light blue", 250);
+            }
+        });
+    }
+    
+    /// @function get_readings
+    function get_readings() {
+        get_indoor_air_quality_readings();
+        get_patio_monitor_readings();
     }
 
     get_readings();

@@ -297,7 +297,7 @@ class AppMongoDatabase(Database):
     # Pation monitor methods
     #
 
-    def retrieve_patio_monitor(self):
+    def retrieve_patio_status(self):
         """Retrieve method for patio monitor measurements."""
         try:
             return self.patio_monitor.find({}, {"_id": 0})

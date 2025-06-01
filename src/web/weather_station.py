@@ -100,10 +100,20 @@ def handle_indoor_air_request(values):
     result = json.dumps(readings)
     return True, result
 
+def handle_patio_request(values):
+    global g_db_uri
+    db = database.AppMongoDatabase()
+    db.connect(g_db_uri)
+    readings = list(db.retrieve_patio_status())
+    result = json.dumps(readings)
+    return True, result
+
 def handle_api_1_0_get_request(request, values):
     """Called to parse a version 1.0 API GET request."""
     if request == 'indoor_air':
         return handle_indoor_air_request(values)
+    if request == 'patio':
+        return handle_patio_request(values)
     return False, ""
 
 def handle_api_1_0_post_request(request, values):
