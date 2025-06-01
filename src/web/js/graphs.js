@@ -24,7 +24,7 @@
 
 /// @function draw_graph
 /// A function that allows the graph to be updated is returned.
-function draw_graph(data, element_id, title, units, color, graph_height) {
+function draw_graph(data, element_id, title, units, color, graph_height, y_axis_labels) {
     let parent = "#charts";
     let parent_width = document.getElementById("charts").offsetWidth;
 
@@ -43,9 +43,14 @@ function draw_graph(data, element_id, title, units, color, graph_height) {
             .style("visibility", "hidden")
             .style("z-index", 1)
             .style("cursor", "pointer")
+            .style("background-color", "gray")
+            .style("border", "solid")
+            .style("border-width", "1px")
+            .style("border-radius", "5px")
+            .style("padding", "10px")
     let mouseover = function() {
         tooltip
-            .style("opacity", 0.7)
+            .style("opacity", 0.75)
             .style("visibility", "visible")
     }
     let mousemove = function() {
@@ -53,13 +58,22 @@ function draw_graph(data, element_id, title, units, color, graph_height) {
         let x = Math.floor((coordinates[0] / width) * data.length);
 
         if (x < data.length) {
+            if (typeof data[x].y == "string") {
+                y_str = data[x].y;
+            }
+            else {
+                y_str = data[x].y.toFixed(2);
+            }
+
             tooltip
-                .html("<b>" + data[x].x + " secs = " + data[x].y.toFixed(2) + " " + units + "</b>")
+                .html("<b>" + data[x].x + " secs, " + y_str + " " + units + "</b>")
                 .style("top", (event.pageY) + "px")
                 .style("left", (event.pageX) + "px")
         }
     }
     let mouseleave = function() {
+        tooltip
+            .style("visibility", "hidden")
     }
 
     // Set up the SVG.
@@ -76,13 +90,42 @@ function draw_graph(data, element_id, title, units, color, graph_height) {
         .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+    // Define the gradient.
+    var gradient = svg
+        .append("linearGradient")
+            .attr("id", "gradient_" + element_id)
+            .attr("y1", height * 0.5)
+            .attr("y2", height)
+            .attr("x1", "0")
+            .attr("x2", "0")
+            .attr("gradientUnits", "userSpaceOnUse");
+    gradient
+        .append("stop")
+            .attr("offset", "0")
+            .attr("stop-color", color)
+            .attr("stop-opacity", 1.0);
+    gradient
+        .append("stop")
+            .attr("offset", "1")
+            .attr("stop-color", color)
+            .attr("stop-opacity", 0.5);
+
     // Define scales.
     var x_scale = d3.scaleLinear()
         .domain([d3.min(data, d => d.x), d3.max(data, d => d.x)])
         .range([0, width]);
-    var y_scale = d3.scaleLinear()
-        .domain([d3.min(data, d => d.y), d3.max(data, d => d.y)])
-        .range([height, 0]);
+
+    // If we were given labels then we have a non-numeric graph.
+    if (y_axis_labels.length > 0) {
+        var y_scale = d3.scaleBand()
+            .domain(y_axis_labels)
+            .range([height, 0]);
+    }
+    else {
+        var y_scale = d3.scaleLinear()
+            .domain([d3.min(data, d => d.y), d3.max(data, d => d.y)])
+            .range([height, 0]);
+    }
 
     // Fill the background.
     svg.append("rect")
@@ -95,21 +138,22 @@ function draw_graph(data, element_id, title, units, color, graph_height) {
         .x(d => x_scale(d.x))
         .y0(height)
         .y1(d => y_scale(d.y));
-    svg.append("path")
+    var area_path = svg.append("path")
         .datum(data)
-        .attr("fill", color)
+        .attr('fill', 'url(#gradient_' + element_id + ')')
         .attr("d", area);
 
     // Draw the initial data line.
     var line = d3.line()
         .x(d => x_scale(d.x))
         .y(d => y_scale(d.y));
-    svg.append("path")
+    var line_path = svg.append("path")
         .datum(data)
         .attr("fill", "none")
         .attr("stroke", color)
-        .attr("stroke-width", 4)
-        .attr("d", line);
+        .attr("stroke-width", 2)
+        .attr("d", line)
+        .attr("id", "pointline");
 
     // Add the grid lines.
     let x_axis_grid = d3.axisBottom(x_scale)
@@ -121,6 +165,16 @@ function draw_graph(data, element_id, title, units, color, graph_height) {
         .attr('class', 'x axis-grid')
         .attr('transform', 'translate(0,' + height + ')')
         .call(x_axis_grid);
+    if (y_axis_labels.length == 0) { 
+        let y_axis_grid = d3.axisLeft(y_scale)
+            .tickSize(-width)
+            .tickSizeOuter(0)
+            .tickFormat('')
+            .ticks(height / 100);
+        svg.append('g')
+            .attr('class', 'y axis-grid')
+            .call(y_axis_grid);
+    }
 
     // Add the X axis.
     let x_axis = svg.append("g")
@@ -128,7 +182,7 @@ function draw_graph(data, element_id, title, units, color, graph_height) {
         .attr("transform", "translate(0," + height + ")")
         .call(d3.axisBottom(x_scale));
 
-    // Add the title.
+    // Add the title and the X axis label.
     if (title.length > 0) {
         svg.append("text")
             .attr("class", "axis")
@@ -156,8 +210,41 @@ function draw_graph(data, element_id, title, units, color, graph_height) {
             .text(units);
     }
 
+    // Set the zoom and Pan features: how much you can zoom, on which part, and what to do when there is a zoom
+    var zoom = d3.zoom()
+        .scaleExtent([.5, 20])  // This control how much you can unzoom (x0.5) and zoom (x20)
+        .extent([[0, 0], [width, height]])
+        .on("zoom", rescale_chart);
+
+    // This add an invisible rect on top of the chart area. This rect can recover pointer events: necessary to understand when the user zoom
+    svg.append("rect")
+        .attr("width", width)
+        .attr("height", height)
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+        .call(zoom);
+
+    // A function that updates the chart when the user zoom and thus new boundaries are available
+    function rescale_chart() {
+
+        // Recover the new scale.
+        var new_x_scale = d3.event.transform.rescaleX(x_scale);
+        var new_y_scale = d3.event.transform.rescaleY(y_scale);
+
+        x_axis_grid.scale(new_x_scale);
+
+        // Update axes with these new boundaries.
+        x_axis.call(d3.axisBottom(new_x_scale));
+        y_axis.call(d3.axisLeft(new_y_scale));
+
+        area_path.attr('x', function(d) { return d3.event.transform.applyX(new_x_scale(d.x)); });
+    }
+
     // Function to update chart.
     function update(new_data) {
+        data = data.concat(new_data); // Need to do this so that tooltips work
+
         x_scale.domain([0, d3.max(new_data, d => d.x)]);
         y_scale.domain([d3.min(new_data, d => d.y), d3.max(new_data, d => d.y)]);
 
@@ -213,9 +300,8 @@ function draw_bar_chart(data, title, units, color, graph_height) {
         .selectAll("text")
             .style("text-anchor", "end");
 
-    // Add the title.
+    // Add the title and the X axis label.
     if (title.length > 0) {
-        // Add the X axis label.
         svg.append("text")
             .attr("class", "axis")
             .attr("transform", "translate(" + (width / 2) + "," + (height + margin.top - 4) + ")")
@@ -258,6 +344,8 @@ function draw_bar_chart(data, title, units, color, graph_height) {
 
     // Function to update chart.
     function update(new_data) {
+        data = data.concat(new_data); // Need to do this so that tooltips work
+
         x_axis.domain(d3.range(0, new_data.length)).range([0, width]);
         y_axis.domain([0, d3.max(new_data, d => d.y)]);
 

@@ -45,9 +45,9 @@
                     humidity_readings.push( { x: ts, y: record['humidity'] });
                 }
 
-                draw_graph(co2_readings, "co2_chart", "Indoor CO2", "PPM", "yellow", 250);
-                draw_graph(temp_readings, "temp_chart", "Indoor Temperature", "C", "red", 250);
-                draw_graph(humidity_readings, "humidity_chart", "Indoor Humidity", "%", "blue", 250);
+                draw_graph(co2_readings, "co2_chart", "Indoor CO2", "PPM", "yellow", 250, []);
+                draw_graph(temp_readings, "temp_chart", "Indoor Temperature", "C", "red", 250, []);
+                draw_graph(humidity_readings, "humidity_chart", "Indoor Humidity", "%", "blue", 250, []);
             }
         });
     }
@@ -72,10 +72,10 @@
                     moisture_sensor_2_readings.push( { x: ts, y: record['moisture_sensor_2'] });
                 }
 
-                draw_graph(temp_readings, "temp_chart", "Patio Temperature", "C", "red", 250);
-                draw_graph(humidity_readings, "humidity_chart", "Patio Humidity", "%", "blue", 250);
-                draw_graph(moisture_sensor_1_readings, "moisture_sensor_1_chart", "Moisture Sensor #1", "%", "light blue", 250);
-                draw_graph(moisture_sensor_2_readings, "moisture_sensor_2_chart", "Moisture Sensor #2", "%", "light blue", 250);
+                draw_graph(temp_readings, "temp_chart", "Patio Temperature", "C", "red", 250, []);
+                draw_graph(humidity_readings, "humidity_chart", "Patio Humidity", "%", "blue", 250, []);
+                draw_graph(moisture_sensor_1_readings, "moisture_sensor_1_chart", "Moisture Sensor #1", "%", "green", 250, []);
+                draw_graph(moisture_sensor_2_readings, "moisture_sensor_2_chart", "Moisture Sensor #2", "%", "green", 250, []);
             }
         });
     }
