@@ -322,7 +322,7 @@ class AppMongoDatabase(Database):
             filter = {}
             if min_ts > 0:
                 filter = {"ts": {"$gt": min_ts}}
-            return self.patio_monitor.find(filter, {"_id": 0})
+            return self.website_status.find(filter, {"_id": 0})
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])

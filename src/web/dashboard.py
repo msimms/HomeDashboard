@@ -133,6 +133,8 @@ def handle_api_1_0_get_request(request, values):
         return handle_indoor_air_request(values)
     if request == 'patio':
         return handle_patio_request(values)
+    if request == 'website_status':
+        return handle_website_status(values)
     return False, ""
 
 def handle_api_1_0_post_request(request, values):
