@@ -101,6 +101,27 @@
         send_get_request_async(api_url, function (response_code, response_text) {
             if (response_code == 200) {
                 const records = JSON.parse(response_text);
+                var graphs = {};
+
+                records.forEach(record => {
+                    let ts = record.ts;
+                    for (const [key, value] of Object.entries(record)) {
+                        if (key != 'ts') {
+                            let new_item = {'x': ts, 'y': value.load_time_secs};
+                            if (key in graphs) {
+                                graphs[key].push(new_item);
+                            }
+                            else {
+                                graphs[key]= [new_item];
+                            }
+                            console.log(record);
+                        }
+                    }
+                });
+
+                for (const [key, value] of Object.entries(graphs)) {
+                    draw_graph(value, key, key, "Load Time (s)", "gray", 250, []);
+                };
             }
         });
     }
