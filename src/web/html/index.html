@@ -28,8 +28,8 @@
 <script>
 
     /// @function get_indoor_air_quality_readings
-    function get_indoor_air_quality_readings() {
-        let api_url = "${root_url}/api/1.0/indoor_air"
+    function get_indoor_air_quality_readings(start_ts) {
+        let api_url = "${root_url}/api/1.0/indoor_air?start_ts=" + start_ts
 
         send_get_request_async(api_url, function (response_code, response_text) {
             if (response_code == 200) {
@@ -53,8 +53,8 @@
     }
 
     /// @function get_patio_monitor_readings
-    function get_patio_monitor_readings() {
-        let api_url = "${root_url}/api/1.0/patio"
+    function get_patio_monitor_readings(start_ts) {
+        let api_url = "${root_url}/api/1.0/patio?start_ts=" + start_ts
 
         send_get_request_async(api_url, function (response_code, response_text) {
             if (response_code == 200) {
@@ -82,8 +82,10 @@
     
     /// @function get_readings
     function get_readings() {
-        get_indoor_air_quality_readings();
-        get_patio_monitor_readings();
+        var yesterday = new Date(new Date().getTime() - (24 * 60 * 60 * 1000));
+        var yesterday_ts = Math.floor(yesterday.getTime() / 1000);
+        get_indoor_air_quality_readings(yesterday_ts);
+        get_patio_monitor_readings(yesterday_ts);
     }
 
     get_readings();

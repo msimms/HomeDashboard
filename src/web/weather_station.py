@@ -45,6 +45,8 @@ CSS_DIR = 'css'
 JS_DIR = 'js'
 HTML_DIR = 'html'
 
+START_TS = 'start_ts'
+
 def signal_handler(signal, frame):
     print("Exiting...")
     sys.exit(0)
@@ -94,17 +96,34 @@ def index():
 
 def handle_indoor_air_request(values):
     global g_db_uri
+    start_ts = 0
+    if START_TS in values:
+        start_ts = int(values[START_TS])
     db = database.AppMongoDatabase()
     db.connect(g_db_uri)
-    readings = list(db.retrieve_air_quality())
+    readings = list(db.retrieve_air_quality(start_ts))
     result = json.dumps(readings)
     return True, result
 
 def handle_patio_request(values):
     global g_db_uri
+    start_ts = 0
+    if START_TS in values:
+        start_ts = int(values[START_TS])
     db = database.AppMongoDatabase()
     db.connect(g_db_uri)
-    readings = list(db.retrieve_patio_status())
+    readings = list(db.retrieve_patio_status(start_ts))
+    result = json.dumps(readings)
+    return True, result
+
+def handle_website_status(values):
+    global g_db_uri
+    start_ts = 0
+    if START_TS in values:
+        start_ts = int(values[START_TS])
+    db = database.AppMongoDatabase()
+    db.connect(g_db_uri)
+    readings = list(db.retrieve_website_status(start_ts))
     result = json.dumps(readings)
     return True, result
 

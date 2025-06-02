@@ -284,10 +284,13 @@ class AppMongoDatabase(Database):
     # Indoor air quality methods
     #
 
-    def retrieve_air_quality(self):
+    def retrieve_air_quality(self, min_ts):
         """Retrieve method for air quality measurements."""
         try:
-            return self.indoor_air_quality.find({}, {"_id": 0})
+            filter = {}
+            if min_ts > 0:
+                filter = {"ts": {"$gt": min_ts}}
+            return self.indoor_air_quality.find(filter, {"_id": 0})
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
@@ -297,10 +300,13 @@ class AppMongoDatabase(Database):
     # Pation monitor methods
     #
 
-    def retrieve_patio_status(self):
+    def retrieve_patio_status(self, min_ts):
         """Retrieve method for patio monitor measurements."""
         try:
-            return self.patio_monitor.find({}, {"_id": 0})
+            filter = {}
+            if min_ts > 0:
+                filter = {"ts": {"$gt": min_ts}}
+            return self.patio_monitor.find(filter, {"_id": 0})
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
@@ -310,10 +316,13 @@ class AppMongoDatabase(Database):
     # Website status methods
     #
 
-    def retrieve_website_status(self):
+    def retrieve_website_status(self, min_ts):
         """Retrieve method for website statuses."""
         try:
-            return self.patio_monitor.find({}, {"_id": 0})
+            filter = {}
+            if min_ts > 0:
+                filter = {"ts": {"$gt": min_ts}}
+            return self.patio_monitor.find(filter, {"_id": 0})
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
