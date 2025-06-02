@@ -107,14 +107,15 @@
                     let ts = record.ts;
                     for (const [key, value] of Object.entries(record)) {
                         if (key != 'ts') {
-                            let new_item = {'x': ts, 'y': value.load_time_secs};
-                            if (key in graphs) {
-                                graphs[key].push(new_item);
+                            if (is_numeric(value.load_time_secs)) {
+                                let new_item = {'x': ts, 'y': value.load_time_secs};
+                                if (key in graphs) {
+                                    graphs[key].push(new_item);
+                                }
+                                else {
+                                    graphs[key]= [new_item];
+                                }
                             }
-                            else {
-                                graphs[key]= [new_item];
-                            }
-                            console.log(record);
                         }
                     }
                 });

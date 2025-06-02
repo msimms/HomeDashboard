@@ -22,6 +22,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/// @function is_numeric
+function is_numeric(num) {
+    return !isNaN(num)
+}
+
 /// @function unix_time_to_local_string
 function unix_time_to_local_string(unix_time) {
     let date = new Date(unix_time);
