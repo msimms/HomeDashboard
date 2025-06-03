@@ -66,7 +66,7 @@ function draw_graph(data, element_id, title, units, color, graph_height, y_axis_
             }
 
             tooltip
-                .html("<b>" + data[x].x + " secs, " + y_str + " " + units + "</b>")
+                .html("<b>" + Date(data[x].x) + ", " + y_str + " " + units + "</b>")
                 .style("top", (event.pageY) + "px")
                 .style("left", (event.pageX) + "px")
         }
@@ -111,8 +111,8 @@ function draw_graph(data, element_id, title, units, color, graph_height, y_axis_
             .attr("stop-opacity", 0.5);
 
     // Define scales.
-    var x_scale = d3.scaleLinear()
-        .domain([d3.min(data, d => d.x), d3.max(data, d => d.x)])
+    var x_scale = d3.scaleTime()
+        .domain([new Date(d3.min(data, d => d.x)), new Date(d3.max(data, d => d.x))])
         .range([0, width]);
 
     // If we were given labels then we have a non-numeric graph.
@@ -156,11 +156,8 @@ function draw_graph(data, element_id, title, units, color, graph_height, y_axis_
         .attr("id", "pointline");
 
     // Add the grid lines.
-    let x_axis_grid = d3.axisBottom(x_scale)
-        .tickSize(-height)
-        .tickSizeOuter(0)
-        .tickFormat('')
-        .ticks(width / 50);
+    var x_axis_grid = d3.axisBottom(x_scale)
+        .tickFormat(d3.timeFormat("%X"));
     svg.append('g')
         .attr('class', 'x axis-grid')
         .attr('transform', 'translate(0,' + height + ')')
