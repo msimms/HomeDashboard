@@ -65,8 +65,11 @@ function draw_graph(data, element_id, title, units, color, graph_height, y_axis_
                 y_str = data[x].y.toFixed(2);
             }
 
+            let ts = Math.floor(data[x].x * 1000);
+            let date_str = new Date(ts).toLocaleString();
+
             tooltip
-                .html("<b>" + Date(data[x].x) + ", " + y_str + " " + units + "</b>")
+                .html("<b>" + date_str + ", " + y_str + " " + units + "</b>")
                 .style("top", (event.pageY) + "px")
                 .style("left", (event.pageX) + "px")
         }
