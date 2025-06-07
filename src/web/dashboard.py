@@ -60,6 +60,35 @@ PARAM_SESSION_TOKEN = "session_token"
 PARAM_SESSION_EXPIRY = "session_expiry"
 PARAM_HASH_KEY = "hash" # Password hash
 
+class ApiException(Exception):
+    """Exception thrown by a REST API."""
+
+    def __init__(self, *args):
+        Exception.__init__(self, args)
+
+    def __init__(self, code, message):
+        self.code = code
+        self.message = message
+        Exception.__init__(self, code, message)
+
+class ApiMalformedRequestException(ApiException):
+    """Exception thrown by a REST API when an API request is missing required parameters."""
+
+    def __init__(self, message):
+        ApiException.__init__(self, 400, message)
+
+class ApiAuthenticationException(ApiException):
+    """Exception thrown by a REST API when user authentication fails."""
+
+    def __init__(self, message):
+        ApiException.__init__(self, 401, message)
+
+class ApiNotLoggedInException(ApiException):
+    """Exception thrown by a REST API when the user is not logged in."""
+
+    def __init__(self):
+        ApiException.__init__(self, 403, "Not logged in")
+        
 def signal_handler(signal, frame):
     print("Exiting...")
     sys.exit(0)
@@ -73,6 +102,94 @@ def log_error(log_str):
     """Writes an error message to the log file."""
     logger = logging.getLogger()
     logger.error(log_str)
+
+def connect_to_db():
+    """Utility function for getting a database connection."""
+    global g_db_uri
+    db = database.AppMongoDatabase()
+    db.connect(g_db_uri)
+    return db
+
+def authenticate_user(email, password):
+    """Validates a user against the credentials in the database."""
+    if len(email) == 0:
+        raise Exception("An email address not provided.")
+    if len(password) < MIN_PASSWORD_LEN:
+        raise Exception("The password is too short.")
+
+    # Connect to the database.
+    db = connect_to_db()
+
+    # Get the exsting password hash for the user.
+    db_hash1, _ = db.retrieve_user(email)
+    if db_hash1 is None:
+        raise Exception("The user (" + email + ") could not be found.")
+
+    # Validate the provided password against the hash from the database.
+    if isinstance(password, str):
+        password = password.encode()
+    if isinstance(db_hash1, str):
+        db_hash1 = db_hash1.encode()
+    return bcrypt.checkpw(password, db_hash1)
+
+def create_user(email, realname, password1, password2):
+    """Adds a user to the database."""
+    if len(email) == 0:
+        raise Exception("An email address not provided.")
+    if len(realname) == 0:
+        raise Exception("Name not provided.")
+    if len(password1) < MIN_PASSWORD_LEN:
+        raise Exception("The password is too short.")
+    if password1 != password2:
+        raise Exception("The passwords do not match.")
+
+    # Connect to the database.
+    db = connect_to_db()
+
+    # Make sure this user doesn't already exist.
+    _, db_hash1 = db.retrieve_user(email)
+    if db_hash1 is not None:
+        raise Exception("The user already exists.")
+
+    # Generate the salted hash of the password.
+    salt = bcrypt.gensalt()
+    computed_hash = bcrypt.hashpw(password1.encode('utf-8'), salt)
+    if not db.create_user(email, realname, computed_hash):
+        raise Exception("An internal error was encountered when creating the user.")
+
+    return True
+
+def create_new_session(email):
+    """Starts a new session. Returns the session cookie and it's expiry date."""
+    # Session token and expiry.
+    session_token = str(uuid.uuid4())
+    expiry = int(time.time() + 90.0 * 86400.0)
+
+    # Connect to the database.
+    db = connect_to_db()
+
+    # Save it to the database.
+    if db.create_session_token(email, session_token, expiry):
+        return session_token, expiry
+    return None, None
+
+def delete_session(session_token):
+    db = connect_to_db()
+    return db.delete_session_token(session_token)
+
+def validate_session(session_token):
+    db = connect_to_db()
+    _, expiry = db.retrieve_session_token(session_token)
+    if expiry is not None:
+
+        # Is the token still valid.
+        now = time.time()
+        if now < expiry:
+            return True
+
+        # Token is expired, so delete it.
+        db.delete_session_token(session_token)
+    return False
 
 @g_flask_app.route('/css/<file_name>')
 def css(file_name):
@@ -108,39 +225,37 @@ def index():
     return ""
 
 def handle_api_indoor_air_request(values):
-    global g_db_uri
+    """Called when an API request for the indoor air status data is received."""
     start_ts = 0
     if START_TS in values:
         start_ts = int(values[START_TS])
-    db = database.AppMongoDatabase()
-    db.connect(g_db_uri)
+    db = connect_to_db()
     readings = list(db.retrieve_air_quality(start_ts))
     result = json.dumps(readings)
     return True, result
 
 def handle_api_patio_request(values):
-    global g_db_uri
+    """Called when an API request for the patio status data is received."""
     start_ts = 0
     if START_TS in values:
         start_ts = int(values[START_TS])
-    db = database.AppMongoDatabase()
-    db.connect(g_db_uri)
+    db = connect_to_db()
     readings = list(db.retrieve_patio_status(start_ts))
     result = json.dumps(readings)
     return True, result
 
 def handle_api_website_status(values):
-    global g_db_uri
+    """Called when an API request for the website status data is received."""
     start_ts = 0
     if START_TS in values:
         start_ts = int(values[START_TS])
-    db = database.AppMongoDatabase()
-    db.connect(g_db_uri)
+    db = connect_to_db()
     readings = list(db.retrieve_website_status(start_ts))
     result = json.dumps(readings)
     return True, result
 
-def handle_api_login(self, values):
+def handle_api_login(values):
+    """Called when an API request to login a user is received."""
     # Required parameters.
     if PARAM_USERNAME not in values:
         raise ApiAuthenticationException("Username not specified.")
@@ -155,13 +270,13 @@ def handle_api_login(self, values):
 
     # Validate the credentials.
     try:
-        if not self.user_mgr.authenticate_user(email, password):
+        if not authenticate_user(email, password):
             raise ApiAuthenticationException("Authentication failed.")
     except Exception as e:
         raise ApiAuthenticationException(str(e))
 
     # Create session information for this new login.
-    cookie, expiry = self.user_mgr.create_new_session(email)
+    cookie, expiry = create_new_session(email)
     if not cookie:
         raise ApiAuthenticationException("Session token not generated.")
     if not expiry:
@@ -175,7 +290,8 @@ def handle_api_login(self, values):
 
     return True, json_result
 
-def handle_api_create_login(self, values):
+def handle_api_create_login(values):
+    """Called when an API request to create a user is received."""
     # Required parameters.
     if PARAM_USERNAME not in values:
         raise ApiAuthenticationException("Username not specified.")
@@ -198,13 +314,13 @@ def handle_api_create_login(self, values):
 
     # Add the user to the database, should fail if the user already exists.
     try:
-        if not self.user_mgr.create_user(email, realname, password1, password2):
+        if not create_user(email, realname, password1, password2):
             raise Exception("User creation failed.")
     except:
         raise Exception("User creation failed.")
 
     # The new user should start in a logged-in state, so generate session info.
-    cookie, expiry = self.user_mgr.create_new_session(email)
+    cookie, expiry = create_new_session(email)
     if not cookie:
         raise ApiAuthenticationException("Session token not generated.")
     if not expiry:
@@ -218,7 +334,8 @@ def handle_api_create_login(self, values):
 
     return True, json_result
 
-def handle_api_login_status(self, values):
+def handle_api_login_status(values):
+    """Called when an API request to login a user is received."""
     # Required parameters.
     if PARAM_SESSION_TOKEN not in values:
         raise ApiAuthenticationException("Session token not specified.")
@@ -231,7 +348,8 @@ def handle_api_login_status(self, values):
     valid_session = validate_session(session_token)
     return valid_session, ""
 
-def handle_api_logout(self, values):
+def handle_api_logout(values):
+    """Called when an API request to logout a user is received."""
     # Required parameters.
     if PARAM_SESSION_TOKEN not in values:
         raise ApiAuthenticationException("Session token not specified.")
