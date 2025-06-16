@@ -37,6 +37,11 @@ PASSWORD_KEY = "password" # User's password
 REALNAME_KEY = "realname" # User's real name
 HASH_KEY = "hash" # Password hash
 
+# Keys associated with session management.
+SESSION_TOKEN_KEY = "cookie"
+SESSION_USER_KEY = "user"
+SESSION_EXPIRY_KEY = "expiry"
+
 class DatabaseException(Exception):
     """Exception thrown by the database."""
 
@@ -146,6 +151,7 @@ class AppMongoDatabase(Database):
 
             # Handles to the various collections.
             self.users_collection = self.database['users']
+            self.sessions_collection = self.database['sessions']
             self.indoor_air_quality = self.database['indoor_air_quality']
             self.patio_monitor = self.database['patio_monitor']
             self.website_status = self.database['website_status']
@@ -273,6 +279,55 @@ class AppMongoDatabase(Database):
         try:
             user_id_obj = ObjectId(str(user_id))
             deleted_result = self.users_collection.delete_one({ DATABASE_ID_KEY: user_id_obj })
+            if deleted_result is not None:
+                return True
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return False
+
+    #
+    # Session token management methods
+    #
+
+    def create_session_token(self, token, user, expiry):
+        """Create method for a session token."""
+        if token is None:
+            raise Exception("Unexpected empty object: token")
+        if user is None:
+            raise Exception("Unexpected empty object: user")
+        if expiry is None:
+            raise Exception("Unexpected empty object: expiry")
+
+        try:
+            post = { SESSION_TOKEN_KEY: token, SESSION_USER_KEY: user, SESSION_EXPIRY_KEY: expiry }
+            return insert_into_collection(self.sessions_collection, post)
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return False
+
+    def retrieve_session_data(self, token):
+        """Retrieve method for session data."""
+        if token is None:
+            raise Exception("Unexpected empty object: token")
+
+        try:
+            session_data = self.sessions_collection.find_one({ SESSION_TOKEN_KEY: token })
+            if session_data is not None:
+                return session_data[SESSION_USER_KEY], session_data[SESSION_EXPIRY_KEY]
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return (None, None)
+
+    def delete_session_token(self, token):
+        """Delete method for a session token."""
+        if token is None:
+            raise Exception("Unexpected empty object: token")
+
+        try:
+            deleted_result = self.sessions_collection.delete_one({ SESSION_TOKEN_KEY: token })
             if deleted_result is not None:
                 return True
         except:

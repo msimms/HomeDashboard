@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+
+<title>Login</title>
+
+<link rel="stylesheet" href="${root_url}/css/normalize.css">
+<link rel="stylesheet" href="${root_url}/css/unauth_style.css">
+<link rel="stylesheet" href="${root_url}/css/site.css">
+
+<meta charset="UTF-8">
+<meta name="description" content="Account login">
+<meta name="keywords" content="login">
+
+<link rel="shortcut icon" href="${root_url}/media/favicon.ico">
+
+</head>
+
+<body>
+
+    <script src="${root_url}/js/common.js"></script>
+    <script>
+
+        /// @function set_background_style
+        function set_background_style(root_url, background_id) {
+            let section = document.getElementById(background_id);
+            let img_index = Math.floor(Math.random() * 1) + 1;
+            let img_str = 'url("' + root_url + '/images/main_background' + img_index + '.png")';
+            section.style.backgroundImage = img_str;
+        }
+
+        /// @function submit_login
+        function submit_login() {
+            let api_url = "/api/1.0/login";
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("password").value;
+            let dict = {};
+
+            dict["username"] = username;
+            dict["password"] = password;
+
+            send_post_request_async(api_url, dict, function(status, response) {
+                if (status == 200) {
+                    if (response.length > 0) {
+                        let obj_list = JSON.parse(response);
+                        document.cookie = "session_cookie=" + obj_list.cookie + "; ";
+                    }
+                    window.location.replace("${root_url}/");
+                }
+                else {
+                    alert("Authentication failed!");
+                }
+            });
+        }
+    </script>
+
+    <section class="loginbackground" id="loginbackground">
+        <div class="loginform cf">
+            <form name="login" action="javascript:submit_login()" accept-charset="utf-8" autocomplete="on">
+                <ul>
+                    <li>
+                        <label for="username">Email</label>
+                        <input type="email" name="username" id="username" placeholder="yourname@email.com" required>
+                    </li>
+                    <li>
+                        <label for="password">Password</label>
+                        <input type="password" name="password" id="password" placeholder="password" required>
+                    </li>
+                    <li>
+                        <input type="submit" value="Login">
+                    </li>
+                </ul>
+            </form>
+        </div>
+    </section>
+
+    <script>
+        set_background_style("${root_url}", "loginbackground");
+    </script>
+
+</body>
+
+</html>

@@ -23,6 +23,7 @@
 # SOFTWARE.
 
 import argparse
+import bcrypt
 import database
 import flask
 import json
@@ -30,10 +31,13 @@ import logging
 import os
 import signal
 import sys
+import time
+import uuid
 import traceback
 import InputChecker
 
 from mako.template import Template
+from urllib.parse import unquote_plus
 
 # Global variables
 g_flask_app = flask.Flask(__name__)
@@ -46,9 +50,11 @@ g_tempmod_dir = "tempmod"
 ERROR_LOG = 'error.log'
 CSS_DIR = 'css'
 JS_DIR = 'js'
+IMAGES_DIR = 'images'
 HTML_DIR = 'html'
 
 START_TS = 'start_ts'
+MIN_PASSWORD_LEN  = 8
 
 # Constants used with the API
 PARAM_USERNAME = "username" # Login name for a user
@@ -59,6 +65,7 @@ PARAM_PASSWORD2 = "password2" # User's confirmation password when creating an ac
 PARAM_SESSION_TOKEN = "session_token"
 PARAM_SESSION_EXPIRY = "session_expiry"
 PARAM_HASH_KEY = "hash" # Password hash
+PARAM_API_KEY = "api_key"
 
 class ApiException(Exception):
     """Exception thrown by a REST API."""
@@ -121,7 +128,7 @@ def authenticate_user(email, password):
     db = connect_to_db()
 
     # Get the exsting password hash for the user.
-    db_hash1, _ = db.retrieve_user(email)
+    _, db_hash1, _ = db.retrieve_user(email)
     if db_hash1 is None:
         raise Exception("The user (" + email + ") could not be found.")
 
@@ -147,7 +154,7 @@ def create_user(email, realname, password1, password2):
     db = connect_to_db()
 
     # Make sure this user doesn't already exist.
-    _, db_hash1 = db.retrieve_user(email)
+    _, db_hash1, _ = db.retrieve_user(email)
     if db_hash1 is not None:
         raise Exception("The user already exists.")
 
@@ -191,6 +198,9 @@ def validate_session(session_token):
         db.delete_session_token(session_token)
     return False
 
+def generate_api_key():
+    pass
+
 @g_flask_app.route('/css/<file_name>')
 def css(file_name):
     """Returns the CSS page."""
@@ -211,6 +221,28 @@ def js(file_name):
         log_error(traceback.format_exc())
         log_error(sys.exc_info()[0])
         log_error('Unhandled exception in ' + js.__name__)
+    return ""
+
+@g_flask_app.route('/images/<file_name>')
+def images(file_name):
+    """Returns the contents from the images directory."""
+    try:
+        return flask.send_from_directory(IMAGES_DIR, file_name)
+    except:
+        log_error(traceback.format_exc())
+        log_error(sys.exc_info()[0])
+        log_error('Unhandled exception in ' + js.__name__)
+    return ""
+
+@g_flask_app.route('/login')
+def login():
+    """Renders the login page."""
+    try:
+        html_file = os.path.join(g_root_dir, HTML_DIR, 'login.html')
+        my_template = Template(filename=html_file, module_directory=g_tempmod_dir)
+        return my_template.render(root_url=g_root_url)
+    except:
+        log_error("Unhandled Exception")
     return ""
 
 @g_flask_app.route('/')
