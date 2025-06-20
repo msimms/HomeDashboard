@@ -185,6 +185,7 @@ def delete_session(session_token):
     return db.delete_session_token(session_token)
 
 def validate_session(session_token):
+    """Returns TRUE if the session token is valid."""
     db = connect_to_db()
     _, expiry = db.retrieve_session_token(session_token)
     if expiry is not None:
@@ -377,6 +378,7 @@ def handle_api_login_status(values):
     if not InputChecker.is_uuid(session_token):
         raise ApiAuthenticationException("Session token is invalid.")
 
+    # Is this is a valid session?
     valid_session = validate_session(session_token)
     return valid_session, ""
 
@@ -393,6 +395,35 @@ def handle_api_logout(values):
 
     delete_session(session_token)
     return True, ""
+
+def handle_api_update_status(values):
+    # Required parameters.
+    if PARAM_SESSION_TOKEN not in values:
+        raise ApiAuthenticationException("Session token not specified.")
+
+    # Validate the required parameters.
+    session_token = values[PARAM_SESSION_TOKEN]
+    if not InputChecker.is_uuid(session_token):
+        raise ApiAuthenticationException("Session token is invalid.")
+
+    # Is this is a valid session?
+    valid_session = validate_session(session_token)
+    pass
+
+def handle_api_create_api_key(values):
+    """Called when an API request to create an API key is received."""
+    # Required parameters.
+    if PARAM_SESSION_TOKEN not in values:
+        raise ApiAuthenticationException("Session token not specified.")
+
+    # Validate the required parameters.
+    session_token = values[PARAM_SESSION_TOKEN]
+    if not InputChecker.is_uuid(session_token):
+        raise ApiAuthenticationException("Session token is invalid.")
+
+    # Is this is a valid session?
+    valid_session = validate_session(session_token)
+    pass
 
 def handle_api_1_0_get_request(request, values):
     """Called to parse a version 1.0 API GET request."""
@@ -413,7 +444,9 @@ def handle_api_1_0_post_request(request, values):
     if request == 'logout':
         return handle_api_logout(values)
     if request == 'update_status':
-        return handle_api_status(values)
+        return handle_api_update_status(values)
+    if request == 'create_api_key':
+        return handle_api_create_api_key(values)
     return False, ""
 
 def handle_api_1_0_delete_request(request, values):

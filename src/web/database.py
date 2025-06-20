@@ -42,6 +42,10 @@ SESSION_TOKEN_KEY = "cookie"
 SESSION_USER_KEY = "user"
 SESSION_EXPIRY_KEY = "expiry"
 
+# Keys associated with API key management.
+API_KEY = "cookie"
+API_USER_KEY = "user"
+
 class DatabaseException(Exception):
     """Exception thrown by the database."""
 
@@ -152,6 +156,7 @@ class AppMongoDatabase(Database):
             # Handles to the various collections.
             self.users_collection = self.database['users']
             self.sessions_collection = self.database['sessions']
+            self.api_keys_collection = self.database['api_keys']
             self.indoor_air_quality = self.database['indoor_air_quality']
             self.patio_monitor = self.database['patio_monitor']
             self.website_status = self.database['website_status']
@@ -335,6 +340,53 @@ class AppMongoDatabase(Database):
             self.log_error(sys.exc_info()[0])
         return False
 
+    #
+    # API key management methods
+    #
+
+    def create_api_key(self, key, user):
+        """Create method for an API key."""
+        if key is None:
+            raise Exception("Unexpected empty object: key")
+        if user is None:
+            raise Exception("Unexpected empty object: user")
+
+        try:
+            post = { API_KEY: key, API_USER_KEY: user }
+            return insert_into_collection(self.api_keys_collection, post)
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return False
+
+    def retrieve_api_key(self, key):
+        """Retrieve method for data associated with an API key."""
+        if key is None:
+            raise Exception("Unexpected empty object: key")
+
+        try:
+            api_key = self.api_keys_collection.find_one({ API_KEY: key })
+            if api_key is not None:
+                return api_key[API_USER_KEY]
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return None
+
+    def delete_api_key(self, key):
+        """Delete method for an API key."""
+        if key is None:
+            raise Exception("Unexpected empty object: key")
+
+        try:
+            deleted_result = self.api_keys_collection.delete_one({ API_KEY: key })
+            if deleted_result is not None:
+                return True
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return False
+        
     #
     # Indoor air quality methods
     #
