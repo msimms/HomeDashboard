@@ -1,0 +1,86 @@
+<!-- Created by Michael Simms -->
+<!-- Copyright (c) 2025 Michael Simms -->
+
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+
+<title>Dashboard</title>
+
+<link rel="stylesheet" type="text/css" href="${root_url}/css/normalize.css">
+<link rel="stylesheet" type="text/css" href="${root_url}/css/site.css">
+<link rel="stylesheet" type="text/css" href="${root_url}/css/graphs.css">
+<link rel="shortcut icon" href="${root_url}/media/favicon.ico">
+
+<meta charset="UTF-8">
+
+</head>
+
+<body>
+
+<div id="charts" class="charts">
+</div>
+
+<script src="${root_url}/js/common.js"></script>
+<script>
+    /// @function api_key_sort
+    function api_key_sort(a, b) {
+        if (a.ts < b.ts)
+            return 1;
+        if (a.ts > b.ts)
+            return -1;
+        return 0;
+    }
+
+    // Handler for when we receive the list of api keys from the server.
+    var process_api_key_list = function(records) {
+        let keys_table = document.getElementById("api_keys_table");
+        records.sort(api_key_sort);
+
+        if (records.length > 0) {
+            let new_row = keys_table.insertRow();
+            let cell = new_row.insertCell();
+
+            cell.appendChild(document.createTextNode("Key"));
+            cell = new_row.insertCell();
+            cell.appendChild(document.createTextNode("Expiry"));
+            cell = new_row.insertCell();
+
+            for (let key_record of records) {
+                let new_row = keys_table.insertRow();
+                let cell = new_row.insertCell();
+
+                cell.appendChild(document.createTextNode(key_record.key));
+                cell = new_row.insertCell();
+                cell.appendChild(document.createTextNode(key_record.expiry));
+                cell = new_row.insertCell();
+            }
+        }
+        else {
+            keys_table.appendChild(document.createTextNode("No API keys"));
+        }
+    }
+
+    /// @function list_api_keys
+    // Get the list of api keys.
+    function list_api_keys() {
+        let api_url = "${root_url}/api/1.0/list_api_keys";
+
+        send_get_request_async(api_url, function (response_code, response_text) {
+            if (response_code == 200) {
+                const calibration_list = JSON.parse(response_text);
+                process_api_key_list(calibration_list);
+            }
+            else {
+                alert("There was an error retrieving the list of api keys.");
+            }
+        });
+    }
+
+    list_api_keys();
+</script>
+
+</body>
+
+</html>

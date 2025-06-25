@@ -373,6 +373,19 @@ class AppMongoDatabase(Database):
             self.log_error(sys.exc_info()[0])
         return None
 
+    def retrieve_api_keys(self, user):
+        """Retrieve method for API keys associated with a specific user."""
+        if user is None:
+            raise Exception("Unexpected empty object: user")
+
+        try:
+            api_keys = self.api_keys_collection.find({ API_USER_KEY: key })
+            return list(api_keys)
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return []
+
     def delete_api_key(self, key):
         """Delete method for an API key."""
         if key is None:

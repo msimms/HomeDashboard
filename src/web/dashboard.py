@@ -29,6 +29,7 @@ import flask
 import json
 import logging
 import os
+import secrets
 import signal
 import sys
 import time
@@ -187,20 +188,35 @@ def delete_session(session_token):
 def validate_session(session_token):
     """Returns TRUE if the session token is valid."""
     db = connect_to_db()
-    _, expiry = db.retrieve_session_token(session_token)
+    user, expiry = db.retrieve_session_data(session_token)
     if expiry is not None:
 
         # Is the token still valid.
         now = time.time()
         if now < expiry:
-            return True
+            return True, user
 
         # Token is expired, so delete it.
         db.delete_session_token(session_token)
-    return False
+    return False, user
 
-def generate_api_key():
-    pass
+def common_session_check(values):
+    """Factoring of common session checking code."""
+    # Required parameters.
+    if PARAM_SESSION_TOKEN not in values:
+        raise ApiAuthenticationException("Session token not specified.")
+
+    # Validate the required parameters.
+    session_token = values[PARAM_SESSION_TOKEN]
+    if not InputChecker.is_uuid(session_token):
+        raise ApiAuthenticationException("Session token is invalid.")
+
+    # Is this is a valid session?
+    valid_session, user = validate_session(session_token)
+    if not valid_session:
+        raise ApiAuthenticationException("Session is invalid.")
+
+    return valid_session, user
 
 @g_flask_app.route('/css/<file_name>')
 def css(file_name):
@@ -240,6 +256,17 @@ def login():
     """Renders the login page."""
     try:
         html_file = os.path.join(g_root_dir, HTML_DIR, 'login.html')
+        my_template = Template(filename=html_file, module_directory=g_tempmod_dir)
+        return my_template.render(root_url=g_root_url)
+    except:
+        log_error("Unhandled Exception")
+    return ""
+
+@g_flask_app.route('/admin')
+def admin():
+    """Renders the admin page."""
+    try:
+        html_file = os.path.join(g_root_dir, HTML_DIR, 'admin.html')
         my_template = Template(filename=html_file, module_directory=g_tempmod_dir)
         return my_template.render(root_url=g_root_url)
     except:
@@ -369,17 +396,8 @@ def handle_api_create_login(values):
 
 def handle_api_login_status(values):
     """Called when an API request to login a user is received."""
-    # Required parameters.
-    if PARAM_SESSION_TOKEN not in values:
-        raise ApiAuthenticationException("Session token not specified.")
-    
-    # Validate the required parameters.
-    session_token = values[PARAM_SESSION_TOKEN]
-    if not InputChecker.is_uuid(session_token):
-        raise ApiAuthenticationException("Session token is invalid.")
-
-    # Is this is a valid session?
-    valid_session = validate_session(session_token)
+    # Validate the session token.
+    valid_session, _ = common_session_check(values)
     return valid_session, ""
 
 def handle_api_logout(values):
@@ -397,33 +415,38 @@ def handle_api_logout(values):
     return True, ""
 
 def handle_api_update_status(values):
-    # Required parameters.
-    if PARAM_SESSION_TOKEN not in values:
-        raise ApiAuthenticationException("Session token not specified.")
+    # Validate the session token.
+    valid_session, _ = common_session_check(values)
 
-    # Validate the required parameters.
-    session_token = values[PARAM_SESSION_TOKEN]
-    if not InputChecker.is_uuid(session_token):
-        raise ApiAuthenticationException("Session token is invalid.")
-
-    # Is this is a valid session?
-    valid_session = validate_session(session_token)
-    pass
+    return True, ""
 
 def handle_api_create_api_key(values):
     """Called when an API request to create an API key is received."""
-    # Required parameters.
-    if PARAM_SESSION_TOKEN not in values:
-        raise ApiAuthenticationException("Session token not specified.")
+    # Validate the session token.
+    valid_session, user = common_session_check(values)
 
-    # Validate the required parameters.
-    session_token = values[PARAM_SESSION_TOKEN]
-    if not InputChecker.is_uuid(session_token):
-        raise ApiAuthenticationException("Session token is invalid.")
+    # Generate an API key.
+    api_key = secrets.token_bytes(256)
 
-    # Is this is a valid session?
-    valid_session = validate_session(session_token)
-    pass
+    # Connect to the database.
+    db = connect_to_db()
+
+    # Store it.
+    create_api_key(api_key, user)
+    return True, ""
+
+def handle_api_list_api_keys(values):
+    """Called when an API request to list API keys is received."""
+    # Validate the session token.
+    valid_session, user = common_session_check(values)
+
+    # Connect to the database.
+    db = connect_to_db()
+
+    # List the api keys.
+    keys = db.retrieve_api_keys(user)
+
+    return True, keys
 
 def handle_api_1_0_get_request(request, values):
     """Called to parse a version 1.0 API GET request."""
@@ -433,6 +456,8 @@ def handle_api_1_0_get_request(request, values):
         return handle_api_patio_request(values)
     if request == 'website_status':
         return handle_api_website_status(values)
+    if request == 'list_api_keys':
+        return handle_api_list_api_keys(values)
     return False, ""
 
 def handle_api_1_0_post_request(request, values):
