@@ -44,7 +44,7 @@
                 if (status == 200) {
                     if (response.length > 0) {
                         let obj_list = JSON.parse(response);
-                        document.cookie = "session_cookie=" + obj_list.cookie + "; ";
+                        document.cookie = "session_cookie=" + obj_list.session_cookie + "; ";
                     }
                     window.location.replace("${root_url}/");
                 }

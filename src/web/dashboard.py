@@ -65,7 +65,7 @@ PARAM_REALNAME = "realname" # User's real name
 PARAM_PASSWORD = "password" # User's password
 PARAM_PASSWORD1 = "password1" # User's password when creating an account
 PARAM_PASSWORD2 = "password2" # User's confirmation password when creating an account
-PARAM_SESSION_TOKEN = "session_token"
+PARAM_SESSION_COOKIE = "session_cookie"
 PARAM_SESSION_EXPIRY = "session_expiry"
 PARAM_HASH_KEY = "hash" # Password hash
 PARAM_API_KEY = "api_key"
@@ -88,7 +88,7 @@ def login_required(function_to_protect):
             # Get the user from the session cookie.
             # This function will take care of checking for session expiry.
             db = connect_to_db()
-            user, expiry = db.retrieve_session_data(session_cookie)
+            user, expiry = db.retrieve_session_data(str(session_cookie))
 
             # We found a user with a valid login session, continue.
             if user:
@@ -200,50 +200,50 @@ def create_user(email, realname, password1, password2):
 
 def create_new_session(email):
     """Starts a new session. Returns the session cookie and it's expiry date."""
-    # Session token and expiry.
-    session_token = str(uuid.uuid4())
+    # Session cookie and expiry.
+    session_cookie = str(uuid.uuid4())
     expiry = int(time.time() + 90.0 * 86400.0)
 
     # Connect to the database.
     db = connect_to_db()
 
     # Save it to the database.
-    if db.create_session_token(email, session_token, expiry):
-        return session_token, expiry
+    if db.create_session_cookie(email, session_cookie, expiry):
+        return session_cookie, expiry
     return None, None
 
-def delete_session(session_token):
+def delete_session(session_cookie):
     db = connect_to_db()
-    return db.delete_session_token(session_token)
+    return db.delete_session_cookie(session_cookie)
 
-def validate_session(session_token):
-    """Returns TRUE if the session token is valid."""
+def validate_session(session_cookie):
+    """Returns TRUE if the session cookie is valid."""
     db = connect_to_db()
-    user, expiry = db.retrieve_session_data(session_token)
+    user, expiry = db.retrieve_session_data(str(session_cookie))
     if expiry is not None:
 
-        # Is the token still valid.
+        # Is the cookie still valid.
         now = time.time()
         if now < expiry:
             return True, user
 
-        # Token is expired, so delete it.
-        db.delete_session_token(session_token)
+        # Cookie is expired, so delete it.
+        db.delete_session_cookie(session_cookie)
     return False, user
 
 def common_session_check(values):
     """Factoring of common session checking code."""
     # Required parameters.
-    if PARAM_SESSION_TOKEN not in values:
-        raise ApiAuthenticationException("Session token not specified.")
+    if PARAM_SESSION_COOKIE not in values:
+        raise ApiAuthenticationException("Session cookie not specified.")
 
     # Validate the required parameters.
-    session_token = values[PARAM_SESSION_TOKEN]
-    if not InputChecker.is_uuid(session_token):
-        raise ApiAuthenticationException("Session token is invalid.")
+    session_cookie = values[PARAM_SESSION_COOKIE]
+    if not InputChecker.is_uuid(session_cookie):
+        raise ApiAuthenticationException("Session cookie is invalid.")
 
     # Is this is a valid session?
-    valid_session, user = validate_session(session_token)
+    valid_session, user = validate_session(session_cookie)
     if not valid_session:
         raise ApiAuthenticationException("Session is invalid.")
 
@@ -370,13 +370,13 @@ def handle_api_login(values):
     # Create session information for this new login.
     cookie, expiry = create_new_session(email)
     if not cookie:
-        raise ApiAuthenticationException("Session token not generated.")
+        raise ApiAuthenticationException("Session cookie not generated.")
     if not expiry:
         raise ApiAuthenticationException("Session expiry not generated.")
 
     # Encode the session info.
     session_data = {}
-    session_data[PARAM_SESSION_TOKEN] = cookie
+    session_data[PARAM_SESSION_COOKIE] = cookie
     session_data[PARAM_SESSION_EXPIRY] = expiry
     json_result = json.dumps(session_data, ensure_ascii=False)
 
@@ -414,13 +414,13 @@ def handle_api_create_login(values):
     # The new user should start in a logged-in state, so generate session info.
     cookie, expiry = create_new_session(email)
     if not cookie:
-        raise ApiAuthenticationException("Session token not generated.")
+        raise ApiAuthenticationException("Session cookie not generated.")
     if not expiry:
         raise ApiAuthenticationException("Session expiry not generated.")
 
     # Encode the session info.
     session_data = {}
-    session_data[PARAM_SESSION_TOKEN] = cookie
+    session_data[PARAM_SESSION_COOKIE] = cookie
     session_data[PARAM_SESSION_EXPIRY] = expiry
     json_result = json.dumps(session_data, ensure_ascii=False)
 
@@ -428,33 +428,33 @@ def handle_api_create_login(values):
 
 def handle_api_login_status(values):
     """Called when an API request to login a user is received."""
-    # Validate the session token.
+    # Validate the session cookie.
     valid_session, _ = common_session_check(values)
     return valid_session, ""
 
 def handle_api_logout(values):
     """Called when an API request to logout a user is received."""
     # Required parameters.
-    if PARAM_SESSION_TOKEN not in values:
-        raise ApiAuthenticationException("Session token not specified.")
+    if PARAM_SESSION_COOKIE not in values:
+        raise ApiAuthenticationException("Session cookie not specified.")
 
     # Validate the required parameters.
-    session_token = values[PARAM_SESSION_TOKEN]
-    if not InputChecker.is_uuid(session_token):
-        raise ApiAuthenticationException("Session token is invalid.")
+    session_cookie = values[PARAM_SESSION_COOKIE]
+    if not InputChecker.is_uuid(session_cookie):
+        raise ApiAuthenticationException("Session cookie is invalid.")
 
-    delete_session(session_token)
+    delete_session(session_cookie)
     return True, ""
 
 def handle_api_update_status(values):
-    # Validate the session token.
+    # Validate the session cookie.
     valid_session, _ = common_session_check(values)
 
     return True, ""
 
 def handle_api_create_api_key(values):
     """Called when an API request to create an API key is received."""
-    # Validate the session token.
+    # Validate the session cookie.
     valid_session, user = common_session_check(values)
 
     # Generate an API key.
@@ -469,7 +469,7 @@ def handle_api_create_api_key(values):
 
 def handle_api_list_api_keys(values):
     """Called when an API request to list API keys is received."""
-    # Validate the session token.
+    # Validate the session cookie.
     valid_session, user = common_session_check(values)
 
     # Connect to the database.
@@ -593,6 +593,7 @@ def main():
 
     # Random secret key.
     g_flask_app.secret_key = os.urandom(12).hex()
+    print(g_flask_app.secret_key)
 
     # Create the app object. It contains all the functionality.
     print(f"The app is running on http://{args.host}:{args.port}")

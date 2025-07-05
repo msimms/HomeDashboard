@@ -38,7 +38,7 @@ REALNAME_KEY = "realname" # User's real name
 HASH_KEY = "hash" # Password hash
 
 # Keys associated with session management.
-SESSION_TOKEN_KEY = "cookie"
+SESSION_COOKIE_KEY = "cookie"
 SESSION_USER_KEY = "user"
 SESSION_EXPIRY_KEY = "expiry"
 
@@ -292,33 +292,33 @@ class AppMongoDatabase(Database):
         return False
 
     #
-    # Session token management methods
+    # Session cookie management methods
     #
 
-    def create_session_token(self, token, user, expiry):
-        """Create method for a session token."""
-        if token is None:
-            raise Exception("Unexpected empty object: token")
+    def create_session_cookie(self, user, cookie, expiry):
+        """Create method for a session cookie."""
         if user is None:
             raise Exception("Unexpected empty object: user")
+        if cookie is None:
+            raise Exception("Unexpected empty object: cookie")
         if expiry is None:
             raise Exception("Unexpected empty object: expiry")
 
         try:
-            post = { SESSION_TOKEN_KEY: token, SESSION_USER_KEY: user, SESSION_EXPIRY_KEY: expiry }
+            post = { SESSION_COOKIE_KEY: cookie, SESSION_USER_KEY: user, SESSION_EXPIRY_KEY: expiry }
             return insert_into_collection(self.sessions_collection, post)
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
         return False
 
-    def retrieve_session_data(self, token):
+    def retrieve_session_data(self, cookie):
         """Retrieve method for session data."""
-        if token is None:
-            raise Exception("Unexpected empty object: token")
+        if cookie is None:
+            raise Exception("Unexpected empty object: cookie")
 
         try:
-            session_data = self.sessions_collection.find_one({ SESSION_TOKEN_KEY: token })
+            session_data = self.sessions_collection.find_one({ SESSION_COOKIE_KEY: cookie })
             if session_data is not None:
                 return session_data[SESSION_USER_KEY], session_data[SESSION_EXPIRY_KEY]
         except:
@@ -326,13 +326,13 @@ class AppMongoDatabase(Database):
             self.log_error(sys.exc_info()[0])
         return (None, None)
 
-    def delete_session_token(self, token):
-        """Delete method for a session token."""
-        if token is None:
-            raise Exception("Unexpected empty object: token")
+    def delete_session_cookie(self, cookie):
+        """Delete method for a session cookie."""
+        if cookie is None:
+            raise Exception("Unexpected empty object: cookie")
 
         try:
-            deleted_result = self.sessions_collection.delete_one({ SESSION_TOKEN_KEY: token })
+            deleted_result = self.sessions_collection.delete_one({ SESSION_COOKIE_KEY: cookie })
             if deleted_result is not None:
                 return True
         except:
