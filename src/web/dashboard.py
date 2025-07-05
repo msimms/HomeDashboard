@@ -26,6 +26,7 @@ import argparse
 import bcrypt
 import database
 import flask
+import functools
 import json
 import logging
 import os
@@ -56,6 +57,7 @@ HTML_DIR = 'html'
 
 START_TS = 'start_ts'
 MIN_PASSWORD_LEN  = 8
+SESSION_COOKIE = 'session_cookie'
 
 # Constants used with the API
 PARAM_USERNAME = "username" # Login name for a user
@@ -68,6 +70,35 @@ PARAM_SESSION_EXPIRY = "session_expiry"
 PARAM_HASH_KEY = "hash" # Password hash
 PARAM_API_KEY = "api_key"
 
+def login_required(function_to_protect):
+    @functools.wraps(function_to_protect)
+    def wrapper(*args, **kwargs):
+        global g_flask_app
+
+        # If the app has not been created then redirect to the "waiting for backend" page.
+        if g_flask_app == None:
+            flask.session['redirect'] = '/' + function_to_protect.__name__
+            return flask.redirect(flask.url_for('waiting'))
+
+        # Grab the session cookie.
+        session_cookie = flask.request.cookies.get(SESSION_COOKIE)
+        if session_cookie is not None:
+            session_cookie = uuid.UUID(session_cookie)
+
+            # Get the user from the session cookie.
+            # This function will take care of checking for session expiry.
+            db = connect_to_db()
+            user, expiry = db.retrieve_session_data(session_cookie)
+
+            # We found a user with a valid login session, continue.
+            if user:
+                return function_to_protect(*args, **kwargs)
+        
+        # No valid login session, redirect to the login page.
+        flask.session['redirect'] = '/' + function_to_protect.__name__
+        return flask.redirect(flask.url_for('login'))
+    return wrapper
+    
 class ApiException(Exception):
     """Exception thrown by a REST API."""
 
@@ -263,6 +294,7 @@ def login():
     return ""
 
 @g_flask_app.route('/admin')
+@login_required
 def admin():
     """Renders the admin page."""
     try:
@@ -558,6 +590,9 @@ def main():
 
     # Make a note of the database URI.
     g_db_uri = args.database
+
+    # Random secret key.
+    g_flask_app.secret_key = os.urandom(12).hex()
 
     # Create the app object. It contains all the functionality.
     print(f"The app is running on http://{args.host}:{args.port}")
