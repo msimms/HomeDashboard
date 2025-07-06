@@ -19,10 +19,8 @@
 
 <body>
 
-<div id="charts" class="charts">
-</div>
-
 <script src="${root_url}/js/common.js"></script>
+<script src="${root_url}/js/cookies.js"></script>
 <script>
     /// @function api_key_sort
     function api_key_sort(a, b) {
@@ -65,7 +63,7 @@
     /// @function list_api_keys
     // Get the list of api keys.
     function list_api_keys() {
-        let api_url = "${root_url}/api/1.0/list_api_keys";
+        let api_url = "${root_url}/api/1.0/list_api_keys?session_cookie=" + get_session_cookie();
 
         send_get_request_async(api_url, function (response_code, response_text) {
             if (response_code == 200) {
@@ -80,6 +78,11 @@
 
     list_api_keys();
 </script>
+
+<div id="api_keys_list" class="block">
+    <table id="api_keys_table">
+    </table>
+</div>
 
 </body>
 

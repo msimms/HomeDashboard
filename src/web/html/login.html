@@ -20,6 +20,7 @@
 <body>
 
     <script src="${root_url}/js/common.js"></script>
+    <script src="${root_url}/js/cookies.js"></script>
     <script>
 
         /// @function set_background_style
@@ -44,7 +45,7 @@
                 if (status == 200) {
                     if (response.length > 0) {
                         let obj_list = JSON.parse(response);
-                        document.cookie = "session_cookie=" + obj_list.session_cookie + "; ";
+                        set_session_cookie(obj_list);
                     }
                     window.location.replace("${root_url}/");
                 }
