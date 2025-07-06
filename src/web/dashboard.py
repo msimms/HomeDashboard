@@ -231,6 +231,12 @@ def validate_session(session_cookie):
         db.delete_session_cookie(session_cookie)
     return False, user
 
+def common_api_key_check(values):
+    """Factoring of common API key checking code."""
+    # Required parameters.
+    if PARAM_API_KEY not in values:
+        raise ApiAuthenticationException("API key not specified.")
+
 def common_session_check(values):
     """Factoring of common session checking code."""
     # Required parameters.
@@ -248,6 +254,16 @@ def common_session_check(values):
         raise ApiAuthenticationException("Session is invalid.")
 
     return valid_session, user
+
+def common_auth_check(values):
+    """Checks for either a valid login session cookie, or a valid api key."""
+    if PARAM_SESSION_COOKIE not in values and PARAM_API_KEY not in values:
+        raise ApiAuthenticationException("Session cookie or API key not specified.")
+    if PARAM_API_KEY in values:
+        return common_api_key_check(values)
+    if PARAM_SESSION_COOKIE in values:
+        return common_session_check(values)
+    raise Exception("Internal error.")
 
 @g_flask_app.route('/css/<file_name>')
 def css(file_name):
@@ -447,30 +463,39 @@ def handle_api_logout(values):
     return True, ""
 
 def handle_api_update_status(values):
+    """Called when an API request to update the status of a sensor is received."""
     # Validate the session cookie.
-    valid_session, _ = common_session_check(values)
+    _, _ = common_auth_check(values)
+
+    # What are we updating?
+
+    # Add to the database.
 
     return True, ""
 
 def handle_api_create_api_key(values):
     """Called when an API request to create an API key is received."""
     # Validate the session cookie.
-    valid_session, user = common_session_check(values)
+    _, user = common_session_check(values)
 
     # Generate an API key.
     api_key = secrets.token_bytes(256)
+    api_key = api_key.hex()
+
+    # Expiry. Three years.
+    expiry = int(time.time() + 90.0 * 86400.0 * 3)
 
     # Connect to the database.
     db = connect_to_db()
 
     # Store it.
-    create_api_key(api_key, user)
+    db.create_api_key(api_key, expiry, user)
     return True, ""
 
 def handle_api_list_api_keys(values):
     """Called when an API request to list API keys is received."""
     # Validate the session cookie.
-    valid_session, user = common_session_check(values)
+    _, user = common_session_check(values)
 
     # Connect to the database.
     db = connect_to_db()

@@ -76,12 +76,37 @@
         });
     }
 
+    /// @function generate_api_key
+    function create_api_key() {
+        let api_url = "/api/1.0/create_api_key";
+        let dict = {};
+
+        dict["session_cookie"] = get_session_cookie();
+
+        send_post_request_async(api_url, dict, function(status, response) {
+            if (status == 200) {
+                if (response.length > 0) {
+                    let obj_list = JSON.parse(response);
+                    set_session_cookie(obj_list);
+                }
+                window.location.replace("${root_url}/admin");
+            }
+            else {
+                alert("API key creation failed!");
+            }
+        });
+    }
+
     list_api_keys();
 </script>
 
 <div id="api_keys_list" class="block">
     <table id="api_keys_table">
     </table>
+
+    <div id="create_api_key">
+        <button type="button" onclick="javascript:create_api_key()">Create an API Key</button>
+    </div>
 </div>
 
 </body>

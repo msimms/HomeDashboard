@@ -43,7 +43,8 @@ SESSION_USER_KEY = "user"
 SESSION_EXPIRY_KEY = "expiry"
 
 # Keys associated with API key management.
-API_KEY = "cookie"
+API_KEY = "key"
+API_EXPIRY_KEY = "expiry"
 API_USER_KEY = "user"
 
 class DatabaseException(Exception):
@@ -344,15 +345,17 @@ class AppMongoDatabase(Database):
     # API key management methods
     #
 
-    def create_api_key(self, key, user):
+    def create_api_key(self, key, expiry, user):
         """Create method for an API key."""
         if key is None:
             raise Exception("Unexpected empty object: key")
+        if expiry is None:
+            raise Exception("Unexpected empty object: expiry")
         if user is None:
             raise Exception("Unexpected empty object: user")
 
         try:
-            post = { API_KEY: key, API_USER_KEY: user }
+            post = { API_KEY: str(key), API_EXPIRY_KEY: expiry, API_USER_KEY: user }
             return insert_into_collection(self.api_keys_collection, post)
         except:
             self.log_error(traceback.format_exc())
@@ -379,7 +382,8 @@ class AppMongoDatabase(Database):
             raise Exception("Unexpected empty object: user")
 
         try:
-            api_keys = self.api_keys_collection.find({ API_USER_KEY: key })
+            result_keys = { DATABASE_ID_KEY: 0, API_KEY: 1, API_EXPIRY_KEY: 1 }
+            api_keys = self.api_keys_collection.find({ API_USER_KEY: user }, result_keys)
             return list(api_keys)
         except:
             self.log_error(traceback.format_exc())
