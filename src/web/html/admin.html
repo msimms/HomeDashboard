@@ -42,7 +42,6 @@
             cell.appendChild(document.createTextNode("Key"));
             cell = new_row.insertCell();
             cell.appendChild(document.createTextNode("Expiry"));
-            cell = new_row.insertCell();
 
             for (let key_record of records) {
                 let new_row = keys_table.insertRow();
@@ -50,8 +49,7 @@
 
                 cell.appendChild(document.createTextNode(key_record.key));
                 cell = new_row.insertCell();
-                cell.appendChild(document.createTextNode(key_record.expiry));
-                cell = new_row.insertCell();
+                cell.appendChild(document.createTextNode(unix_time_to_local_string(key_record.expiry * 1000)));
             }
         }
         else {
