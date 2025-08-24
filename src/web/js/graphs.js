@@ -87,8 +87,8 @@ function draw_graph(data, element_id, title, units, color, graph_height, y_axis_
             .attr("viewBox", "0 0 " + svg_width  + " " + svg_height)
             .attr("width", svg_width)
             .attr("height", svg_height)
-            .on('mouseover', mousemove)
-            .on('mousemove', mouseover)
+            .on('mouseover', mouseover)
+            .on('mousemove', mousemove)
             .on('mouseleave', mouseleave)
         .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
