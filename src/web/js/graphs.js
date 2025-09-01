@@ -245,7 +245,7 @@ function draw_graph(data, settings, column_index = 0) {
     let x_axis = svg.append("g")
         .attr("class", "x_axis")
         .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(x_scale));
+        .call(x_axis_grid);
 
     // Add the title and the X axis label.
     if (settings.label.length > 0) {
@@ -299,7 +299,7 @@ function draw_graph(data, settings, column_index = 0) {
         var new_y_scale = d3.event.transform.rescaleY(y_scale);
 
         // Update axes with these new boundaries.
-        x_axis.call(d3.axisBottom(new_x_scale));
+        x_axis.call(d3.axisBottom(new_x_scale).tickFormat(d3.timeFormat("%X")));
         y_axis.call(d3.axisLeft(new_y_scale));
 
         // Re-render the line using the rescaled axes
