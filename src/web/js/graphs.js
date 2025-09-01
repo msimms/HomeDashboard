@@ -46,6 +46,8 @@ function draw_graph(data, settings, column_index = 0) {
     let parent = "#charts";
     let parent_width = document.getElementById("charts").offsetWidth;
 
+    data = data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
+
     let margin = { top: 20, right: 0, bottom: 40, left: 80 };
 
     let total_width = parent_width - margin.left - margin.right; // usable width
@@ -92,7 +94,7 @@ function draw_graph(data, settings, column_index = 0) {
 
             if (y_str.length > 0) {
                 tooltip
-                    .html("<b>" + data[x].x + " " + settings.x_axis_label + ", " + y_str + " " + settings.unit_label + "</b>")
+                    .html("<b>" + unix_time_to_local_string(data[x].x) + ", " + y_str + " " + settings.unit_label + "</b>")
                     .style("top", (event.pageY) + "px")
                     .style("left", (event.pageX) + "px")
             }
