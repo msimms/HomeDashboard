@@ -27,6 +27,17 @@
 <script src="${root_url}/js/graphs.js"></script>
 <script>
 
+    function create_graph_settings(element_id, label, unit_label, color, height) {
+        var settings = new GraphSettings();
+        settings.element_id = element_id;
+        settings.label = label;
+        settings.unit_label = unit_label;
+        settings.color = color;
+        settings.height = height;
+        settings.fill = false;
+        return settings;
+    }
+
     /// @function get_indoor_air_quality_readings
     function get_indoor_air_quality_readings(start_ts) {
         let api_url = "${root_url}/api/1.0/indoor_air?start_ts=" + start_ts
@@ -46,13 +57,13 @@
                 }
 
                 if (co2_readings.length > 0) {
-                    draw_graph(co2_readings, "co2_chart", "Indoor CO2", "PPM", "yellow", 250, []);
+                    draw_graph(co2_readings, create_graph_settings("co2_chart", "Indoor CO2", "PPM", "yellow", 250));
                 }
                 if (temp_readings.length > 0) {
-                    draw_graph(temp_readings, "temp_chart", "Indoor Temperature", "C", "red", 250, []);
+                    draw_graph(temp_readings, create_graph_settings("temp_chart", "Indoor Temperature", "C", "red", 250));
                 }
                 if (humidity_readings.length > 0) {
-                    draw_graph(humidity_readings, "humidity_chart", "Indoor Humidity", "%", "blue", 250, []);
+                    draw_graph(humidity_readings, create_graph_settings("humidity_chart", "Indoor Humidity", "%", "blue", 250));
                 }
             }
         });
@@ -79,16 +90,16 @@
                 }
 
                 if (temp_readings.length > 0) {
-                    draw_graph(temp_readings, "temp_chart", "Patio Temperature", "C", "red", 250, []);
+                    draw_graph(temp_readings, create_graph_settings("temp_chart", "Patio Temperature", "C", "red", 250));
                 }
                 if (humidity_readings.length > 0) {
-                    draw_graph(humidity_readings, "humidity_chart", "Patio Humidity", "%", "blue", 250, []);
+                    draw_graph(humidity_readings, create_graph_settings("humidity_chart", "Patio Humidity", "%", "blue", 250));
                 }
                 if (moisture_sensor_1_readings.length > 0) {
-                    draw_graph(moisture_sensor_1_readings, "moisture_sensor_1_chart", "Moisture Sensor #1", "%", "green", 250, []);
+                    draw_graph(moisture_sensor_1_readings, create_graph_settings("moisture_sensor_1_chart", "Moisture Sensor #1", "%", "green", 250));
                 }
                 if (moisture_sensor_2_readings.length > 0) {
-                    draw_graph(moisture_sensor_2_readings, "moisture_sensor_2_chart", "Moisture Sensor #2", "%", "green", 250, []);
+                    draw_graph(moisture_sensor_2_readings, create_graph_settings("moisture_sensor_2_chart", "Moisture Sensor #2", "%", "green", 250));
                 }
             }
         });
@@ -121,7 +132,7 @@
                 });
 
                 for (const [key, value] of Object.entries(graphs)) {
-                    draw_graph(value, key, key, "Load Time (s)", "gray", 250, []);
+                    draw_graph(value, create_graph_settings(key, key, "Load Time (s)", "gray", 250));
                 };
             }
         });
