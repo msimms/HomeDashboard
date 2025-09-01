@@ -182,6 +182,11 @@ function draw_graph(data, settings, column_index = 0) {
             .range([height, 0]);
     }
 
+    // Define the line.
+    var line = d3.line()
+        .x(d => x_scale(d.x))
+        .y(d => y_scale(d.y));
+
     // Draw the area under the line.
     if (settings.fill) {
         var area = d3.area()
@@ -202,11 +207,8 @@ function draw_graph(data, settings, column_index = 0) {
     }
 
     // Draw the initial data line.
-    var line = d3.line()
-        .x(d => x_scale(d.x))
-        .y(d => y_scale(d.y));
     if (settings.fill) {
-        plot.append("path")
+        var line_path = plot.append("path")
             .datum(data)
             .attr("fill", settings.color)
             .attr("stroke", settings.color)
@@ -215,7 +217,7 @@ function draw_graph(data, settings, column_index = 0) {
             .attr("id", "pointline");
     }
     else {
-        plot.append("path")
+        var line_path = plot.append("path")
             .datum(data)
             .attr("stroke", settings.color)
             .attr("stroke-width", 3)
@@ -304,7 +306,7 @@ function draw_graph(data, settings, column_index = 0) {
         x_axis.call(d3.axisBottom(new_x_scale).tickFormat(d3.timeFormat("%X")));
         y_axis.call(d3.axisLeft(new_y_scale));
 
-        // Re-render the line using the rescaled axes
+        // Re-render the line using the rescaled axes.
         const zline = d3.line().x(d => new_x_scale(d.x)).y(d => new_y_scale(d.y));
         if (settings.fill) {
             area = d3.area()
@@ -317,6 +319,7 @@ function draw_graph(data, settings, column_index = 0) {
         }
         else {
             area_path.attr("d", zline);
+            line_path.attr("d", zline);
         }
     }
 
