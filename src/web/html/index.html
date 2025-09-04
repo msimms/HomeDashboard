@@ -48,12 +48,16 @@
                 var co2_readings = [];
                 var temp_readings = [];
                 var humidity_readings = [];
+                var voc_readings = [];
+                var voc_index_readings = [];
 
                 for (let record of records) {
                     let ts = record['ts'];
                     co2_readings.push( { x: ts, y: record['co2_ppm'] });
                     temp_readings.push( { x: ts, y: record['temp_c'] });
                     humidity_readings.push( { x: ts, y: record['humidity'] });
+                    voc_readings.push( { x: ts, y: record['voc'] });
+                    voc_index_readings.push( { x: ts, y: record['voc_index'] });
                 }
 
                 if (co2_readings.length > 0) {
@@ -64,6 +68,12 @@
                 }
                 if (humidity_readings.length > 0) {
                     draw_graph(humidity_readings, create_graph_settings("humidity_chart", "Indoor Humidity", "%", "blue", 250));
+                }
+                if (voc_readings.length > 0) {
+                    draw_graph(voc_readings, create_graph_settings("voc_chart", "VOC", "", "green", 250));
+                }
+                if (voc_index_readings.length > 0) {
+                    draw_graph(voc_index_readings, create_graph_settings("voc_index_chart", "VOC Index", "", "green", 250));
                 }
             }
         });
