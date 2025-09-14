@@ -8,7 +8,7 @@
 #include "memorysaver.h"
 #include "OV5642_regs.h"
 
-#define CS_PIN 2
+#define CS_PIN 7
 ArduCAM myCAM(OV5642, CS_PIN);
 
 WiFiServer server(80);
