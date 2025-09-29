@@ -472,7 +472,7 @@ class AppMongoDatabase(Database):
     #
 
     def retrieve_refrigerator_status(self, min_ts):
-        """Retrieve method for patio monitor measurements."""
+        """Retrieve method for refrigerator measurements (temp, amount left in the keg, etc)."""
         try:
             filter = {}
             if min_ts > 0:
