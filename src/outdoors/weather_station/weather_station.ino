@@ -128,7 +128,7 @@ void post_status(String str) {
       Serial.println("Connected!");
 
       // Send the HTTP header
-      client.print(String("POST https://") + STATUS_URL + ("/api/1.0/update_status HTTP/1.1\r\n");
+      client.print(String("POST https://") + STATUS_URL + ("/api/1.0/update_status HTTP/1.1\r\n"));
       client.print("Host: mikesimms.info\r\n");
       client.print("User-Agent: Nano33IoT/1.0\r\n");
       client.print("Content-Type: application/json; charset=utf-8\r\n");
