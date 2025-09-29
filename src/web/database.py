@@ -42,6 +42,12 @@ SESSION_COOKIE_KEY = "cookie"
 SESSION_USER_KEY = "user"
 SESSION_EXPIRY_KEY = "expiry"
 
+# Collection names.
+COLLECTION_INDOOR_AIR_QUALITY = "indoor_air_quality"
+COLLECTION_PATIO_MONITOR = "patio_monitor"
+COLLECTION_REFRIGERATOR = "refrigerator"
+COLLECTION_WEBSITE_STATUS = "website_status"
+
 # Keys associated with API key management.
 API_KEY = "key"
 API_EXPIRY_KEY = "expiry"
@@ -158,9 +164,10 @@ class AppMongoDatabase(Database):
             self.users_collection = self.database['users']
             self.sessions_collection = self.database['sessions']
             self.api_keys_collection = self.database['api_keys']
-            self.indoor_air_quality = self.database['indoor_air_quality']
-            self.patio_monitor = self.database['patio_monitor']
-            self.website_status = self.database['website_status']
+            self.indoor_air_quality = self.database[COLLECTION_INDOOR_AIR_QUALITY]
+            self.patio_monitor = self.database[COLLECTION_PATIO_MONITOR]
+            self.refrigerator = self.database[COLLECTION_REFRIGERATOR]
+            self.website_status = self.database[COLLECTION_WEBSITE_STATUS]
         except pymongo.errors.ConnectionFailure as e:
             raise DatabaseException("Could not connect to MongoDB: %s" % e)
 
@@ -416,8 +423,12 @@ class AppMongoDatabase(Database):
             raise Exception("Unexpected empty object: values")
 
         try:
-            if collection_name == "patio_monitor":
+            if collection_name == COLLECTION_PATIO_MONITOR:
                 return insert_into_collection(self.patio_monitor, values)
+            if collection_name == COLLECTION_REFRIGERATOR:
+                return insert_into_collection(self.refrigerator, values)
+            if collection_name == COLLECTION_WEBSITE_STATUS:
+                return insert_into_collection(self.website_status, values)
             raise Exception("Unknown collection")
         except:
             self.log_error(traceback.format_exc())
@@ -441,7 +452,7 @@ class AppMongoDatabase(Database):
         return []
 
     #
-    # Pation monitor methods
+    # Patio monitor methods
     #
 
     def retrieve_patio_status(self, min_ts):
@@ -451,6 +462,22 @@ class AppMongoDatabase(Database):
             if min_ts > 0:
                 filter = {"ts": {"$gt": min_ts}}
             return self.patio_monitor.find(filter, {"_id": 0})
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return []
+
+    #
+    # Refrigerator monitor methods
+    #
+
+    def retrieve_patio_status(self, min_ts):
+        """Retrieve method for patio monitor measurements."""
+        try:
+            filter = {}
+            if min_ts > 0:
+                filter = {"ts": {"$gt": min_ts}}
+            return self.refrigerator.find(filter, {"_id": 0})
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
