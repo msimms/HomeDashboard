@@ -471,7 +471,7 @@ class AppMongoDatabase(Database):
     # Refrigerator monitor methods
     #
 
-    def retrieve_patio_status(self, min_ts):
+    def retrieve_refrigerator_status(self, min_ts):
         """Retrieve method for patio monitor measurements."""
         try:
             filter = {}
