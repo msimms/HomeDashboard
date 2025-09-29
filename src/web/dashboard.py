@@ -239,8 +239,11 @@ def common_api_key_check(values):
         raise ApiAuthenticationException("API key not specified.")
 
     # Validate the key.
+    key = values[PARAM_API_KEY]
+
+    # Check the database.
     db = connect_to_db()
-    user = db.retrieve_api_key()
+    user = db.retrieve_api_key(key)
     return True, user
 
 def common_session_check(values):
