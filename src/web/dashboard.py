@@ -238,6 +238,11 @@ def common_api_key_check(values):
     if PARAM_API_KEY not in values:
         raise ApiAuthenticationException("API key not specified.")
 
+    # Validate the key.
+    db = connect_to_db()
+    user = db.retrieve_api_key()
+    return True, user
+
 def common_session_check(values):
     """Factoring of common session checking code."""
     # Required parameters.

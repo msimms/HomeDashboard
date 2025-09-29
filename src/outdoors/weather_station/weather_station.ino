@@ -120,14 +120,34 @@ void post_status(String str) {
 
   // Network is connected....
   if (WiFi.status() == WL_CONNECTED) {
-    WiFiClient client;
-
-    Serial.println("Sending status...");
+    WiFiSSLClient client;
 
     // Connect to the relay client.
+    Serial.println("Sending status...");
     if (client.connect(STATUS_URL, STATUS_PORT)) {
+      Serial.println("Connected!");
+
+      // Send the HTTP header
+      client.print(String("POST https://") + STATUS_URL + ("/api/1.0/update_status HTTP/1.1\r\n");
+      client.print("Host: mikesimms.info\r\n");
+      client.print("User-Agent: Nano33IoT/1.0\r\n");
+      client.print("Content-Type: application/json; charset=utf-8\r\n");
+      client.print(String("Content-Length: ") + str.length() + "\r\n");
+      client.print("Connection: close\r\n");
+      client.print("\r\n"); // end of headers
+
+      // Send the payload.
       client.println(str);
       Serial.println("Status sent!");
+
+      // Read the response.
+      while (client.connected() || client.available()) {
+        if (client.available()) {
+          String line = client.readStringUntil('\n');
+          Serial.println(line);
+        }
+      }
+
     } else {
       Serial.println("Error connecting to the server!");
       print_wifi_status();
@@ -198,7 +218,7 @@ void loop() {
   digitalWrite(LED, LOW);
 
   // Format the output.
-  char buff[256];
+  char buff[800];
   snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"patio_monitor\", \"api_key\": \"%s\", \"wind speed ms\": %f, \"temperature\": %f, \"humidity\": %f, \"moisture_sensor_1\": %f, \"moisture_sensor_2\": %f}", API_KEY, wind_speed_ms, temp_c, humidity, moisture1, moisture2);
   Serial.println(buff);
 
