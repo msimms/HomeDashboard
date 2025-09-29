@@ -70,6 +70,7 @@ PARAM_SESSION_EXPIRY = "session_expiry"
 PARAM_HASH_KEY = "hash" # Password hash
 PARAM_API_KEY = "api_key"
 PARAM_COLLECTION = "collection"
+PARAM_TIMESTAMP = "ts"
 
 def login_required(function_to_protect):
     @functools.wraps(function_to_protect)
@@ -487,6 +488,10 @@ def handle_api_update_status(values):
     # What are we updating?
     collection = values[PARAM_COLLECTION]
     del values[PARAM_COLLECTION] # Remove this as there's no reason to store it.
+
+    # Was a timestamp provided? If not, add one.
+    if not PARAM_TIMESTAMP in values:
+        values[PARAM_TIMESTAMP] = time.time()
 
     # Connect to the database.
     db = connect_to_db()
