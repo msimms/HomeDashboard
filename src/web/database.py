@@ -405,6 +405,26 @@ class AppMongoDatabase(Database):
         return False
         
     #
+    # Status methods
+    #
+
+    def create_status(self, collection_name, values):
+        """Create method for status."""
+        if collection_name is None:
+            raise Exception("Unexpected empty object: collection_name")
+        if values is None:
+            raise Exception("Unexpected empty object: values")
+
+        try:
+            if collection_name == "patio_monitor":
+                return insert_into_collection(self.patio_monitor, values)
+            raise Exception("Unknown collection")
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return False
+
+    #
     # Indoor air quality methods
     #
 

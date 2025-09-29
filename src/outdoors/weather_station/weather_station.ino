@@ -199,7 +199,7 @@ void loop() {
 
   // Format the output.
   char buff[256];
-  snprintf(buff, sizeof(buff) - 1, "{\"wind speed ms\": %f, \"temperature\": %f, \"humidity\": %f, \"moisture_sensor_1\": %f, \"moisture_sensor_2\": %f}", wind_speed_ms, temp_c, humidity, moisture1, moisture2);
+  snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"patio_monitor\", \"api_key\": \"%s\", \"wind speed ms\": %f, \"temperature\": %f, \"humidity\": %f, \"moisture_sensor_1\": %f, \"moisture_sensor_2\": %f}", API_KEY, wind_speed_ms, temp_c, humidity, moisture1, moisture2);
   Serial.println(buff);
 
   // Send.

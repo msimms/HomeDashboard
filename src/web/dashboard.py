@@ -69,6 +69,7 @@ PARAM_SESSION_COOKIE = "session_cookie"
 PARAM_SESSION_EXPIRY = "session_expiry"
 PARAM_HASH_KEY = "hash" # Password hash
 PARAM_API_KEY = "api_key"
+PARAM_COLLECTION = "collection"
 
 def login_required(function_to_protect):
     @functools.wraps(function_to_protect)
@@ -464,12 +465,22 @@ def handle_api_logout(values):
 
 def handle_api_update_status(values):
     """Called when an API request to update the status of a sensor is received."""
+    # Required parameters.
+    if PARAM_COLLECTION not in values:
+        raise ApiAuthenticationException("Collection not specified.")
+
     # Validate the session cookie.
     _, _ = common_auth_check(values)
 
     # What are we updating?
+    collection = values[PARAM_COLLECTION]
+    del values[PARAM_COLLECTION] # Remove this as there's no reason to store it.
+
+    # Connect to the database.
+    db = connect_to_db()
 
     # Add to the database.
+    db.create_status(collection, values)
 
     return True, ""
 
@@ -625,4 +636,4 @@ def main():
     g_flask_app.run(host=args.host, port=args.port)
 
 if __name__=="__main__":
-	main()
+    main()
