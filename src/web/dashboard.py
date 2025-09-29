@@ -479,6 +479,10 @@ def handle_api_update_status(values):
 
     # Validate the session cookie.
     _, _ = common_auth_check(values)
+    if PARAM_SESSION_COOKIE in values:
+        del values[PARAM_SESSION_COOKIE] # Remove this as there's no reason to store it.
+    if PARAM_API_KEY in values:
+        del values[PARAM_API_KEY] # Remove this as there's no reason to store it.
 
     # What are we updating?
     collection = values[PARAM_COLLECTION]
