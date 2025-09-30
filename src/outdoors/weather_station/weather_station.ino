@@ -141,13 +141,12 @@ void post_status(String str) {
       Serial.println("Status sent!");
 
       // Read the response.
-      while (client.connected() || client.available()) {
-        if (client.available()) {
-          String line = client.readStringUntil('\n');
-          Serial.println(line);
-        }
+      while (client.connected() && client.available()) {
+        String line = client.readStringUntil('\n');
+        Serial.println(line);
       }
 
+      Serial.println("Done sending status!");
     } else {
       Serial.println("Error connecting to the server!");
       print_wifi_status();
