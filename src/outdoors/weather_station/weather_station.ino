@@ -124,7 +124,7 @@ void post_status(String str) {
 
     // Connect to the relay client.
     Serial.println("Sending status...");
-    if (client.connect(STATUS_URL, STATUS_PORT)) {
+    if (client.connectSSL(STATUS_URL, STATUS_PORT)) {
       Serial.println("Connected!");
 
       // Send the HTTP header
@@ -138,12 +138,19 @@ void post_status(String str) {
 
       // Send the payload.
       client.println(str);
+
+      // Make sure it's sent.
+      client.flush();
       Serial.println("Status sent!");
 
       // Read the response.
-      while (client.connected() && client.available()) {
-        String line = client.readStringUntil('\n');
-        Serial.println(line);
+      Serial.println("Reading the response...");
+      unsigned long timeout = millis();
+      while (client.connected() && millis() - timeout < 5000) {
+        if (client.available()) {
+          String line = client.readStringUntil('\n');
+          Serial.println(line);
+        }
       }
 
       Serial.println("Done sending status!");
