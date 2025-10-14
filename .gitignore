@@ -22,3 +22,6 @@ DerivedData
 *.xcworkspacedata
 
 .vscode/
+
+arduino_secrets.h
+
