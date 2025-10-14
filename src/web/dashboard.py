@@ -549,8 +549,8 @@ def handle_api_1_0_get_request(request, values):
         return handle_api_indoor_air_request(values)
     if request == 'patio':
         return handle_api_patio_request(values)
-    if request == 'keg':
-        return handle_api_keg_request(values)
+    if request == 'refrigerator':
+        return handle_api_refrigerator_request(values)
     if request == 'website_status':
         return handle_api_website_status(values)
     if request == 'list_api_keys':
