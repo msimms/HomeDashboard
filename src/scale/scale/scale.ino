@@ -201,13 +201,21 @@ void print_wifi_status() {
 /// @function post_status
 void post_status(String str) {
 
-  WiFi.begin(SECRET_SSID, SECRET_PASS);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500); Serial.print('.');
-  }
-  Serial.println("\nWiFi connected.");
+  // Attempt to connect to Wi-Fi network:
+  Serial.println("[INFO] Connecting to WiFi...");
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.print("[INFO] Attempting to connect to the network: ");
+    Serial.println(SECRET_SSID);
+    int wifi_status = WiFi.begin(SECRET_SSID, SECRET_PASS);
 
+    // Wait a few seconds for connection.
+    delay(5000);
+  }
+
+  // Network is connected....
+  Serial.println("[INFO] Wifi connected!");
   WiFiSSLClient ssl; // TLS socket
+
   HttpClient http(ssl, STATUS_URL, STATUS_PORT);
   http.beginRequest();
   http.post("/api/1.0/update_status");
@@ -220,8 +228,10 @@ void post_status(String str) {
 
   int status = http.responseStatusCode();
   String body = http.responseBody();
-  Serial.print("Status: "); Serial.println(status);
+  Serial.print("[INFO] Status: "); Serial.println(status);
   Serial.println(body);
+
+  WiFi.end();
 }
 
 /// @function setup_scale
@@ -386,7 +396,7 @@ void setup() {
 /// Called repeatedly
 void loop() {
 
-  float weight = 0.0;
+  float weight = -1.0;
 
   // Turn the LED on.
   digitalWrite(LED, LOW);

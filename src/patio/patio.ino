@@ -103,55 +103,47 @@ void post_status(String str) {
     delay(5000);
   }
 
-  // You're connected now, so print out the data.
-  Serial.println("[INFO] Wifi connected!");
-
   // Network is connected....
-  if (WiFi.status() == WL_CONNECTED) {
-    WiFiSSLClient client;
+  Serial.println("[INFO] Wifi connected!");
+  WiFiSSLClient client;
 
-    // Connect to the relay client.
-    Serial.println("[INFO] Sending status...");
-    if (client.connectSSL(STATUS_URL, STATUS_PORT)) {
-      Serial.println("[INFO] Connected!");
+  // Connect to the relay client.
+  Serial.println("[INFO] Sending status...");
+  if (client.connectSSL(STATUS_URL, STATUS_PORT)) {
+    Serial.println("[INFO] Connected!");
 
-      // Send the HTTP header
-      client.print(String("POST https://") + STATUS_URL + ("/api/1.0/update_status HTTP/1.1\r\n"));
-      client.print("Host: mikesimms.info\r\n");
-      client.print("User-Agent: Nano33IoT/1.0\r\n");
-      client.print("Content-Type: application/json; charset=utf-8\r\n");
-      client.print(String("Content-Length: ") + str.length() + "\r\n");
-      client.print("Connection: close\r\n");
-      client.print("\r\n"); // end of headers
+    // Send the HTTP header
+    client.print(String("POST https://") + STATUS_URL + ("/api/1.0/update_status HTTP/1.1\r\n"));
+    client.print("Host: mikesimms.info\r\n");
+    client.print("User-Agent: Nano33IoT/1.0\r\n");
+    client.print("Content-Type: application/json; charset=utf-8\r\n");
+    client.print(String("Content-Length: ") + str.length() + "\r\n");
+    client.print("Connection: close\r\n");
+    client.print("\r\n"); // end of headers
 
-      // Send the payload.
-      client.println(str);
+    // Send the payload.
+    client.println(str);
 
-      // Make sure it's sent.
-      client.flush();
-      Serial.println("[INFO] Status sent!");
+    // Make sure it's sent.
+    client.flush();
+    Serial.println("[INFO] Status sent!");
 
-      // Read the response.
-      Serial.println("[INFO] Reading the response...");
-      unsigned long timeout = millis();
-      while (client.connected() && millis() - timeout < 5000) {
-        if (client.available()) {
-          String line = client.readStringUntil('\n');
-          Serial.println(line);
-        }
+    // Read the response.
+    Serial.println("[INFO] Reading the response...");
+    unsigned long timeout = millis();
+    while (client.connected() && millis() - timeout < 5000) {
+      if (client.available()) {
+        String line = client.readStringUntil('\n');
+        Serial.println(line);
       }
-
-      Serial.println("[INFO] Done sending status!");
-    } else {
-      Serial.println("[INFO] Error connecting to the server!");
-      print_wifi_status();
     }
-    client.stop();
-  }
-  else {
-    Serial.println("[INFO] Not connected to Wifi!");
+
+    Serial.println("[INFO] Done sending status!");
+  } else {
+    Serial.println("[INFO] Error connecting to the server!");
     print_wifi_status();
   }
+  client.stop();
 
   WiFi.end();
 }
