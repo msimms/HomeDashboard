@@ -70,25 +70,6 @@ float read_soil_moisture_sensor_2() {
   return read_soil_moisture_sensor(MOISTURE_SENSOR_2);
 }
 
-/// @function setup_wifi
-void setup_wifi() {
-  Serial.println("[INFO] Connecting to WiFi...");
-
-  // Attempt to connect to Wi-Fi network:
-  int wifi_status = WL_IDLE_STATUS;
-  while (wifi_status != WL_CONNECTED) {
-    Serial.print("[INFO] Attempting to connect to the network: ");
-    Serial.println(SECRET_SSID);
-    wifi_status = WiFi.begin(SECRET_SSID, SECRET_PASS);
-
-    // Wait a few seconds for connection.
-    delay(5000);
-  }
-
-  // You're connected now, so print out the data.
-  Serial.println("[INFO] Wifi connected!");
-}
-
 /// @function print_wifi_status
 void print_wifi_status() {
 
@@ -111,8 +92,19 @@ void print_wifi_status() {
 /// @function post_status
 void post_status(String str) {
 
-  // Reconnect to the network, if necessary.
-  setup_wifi();
+  // Attempt to connect to Wi-Fi network:
+  Serial.println("[INFO] Connecting to WiFi...");
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.print("[INFO] Attempting to connect to the network: ");
+    Serial.println(SECRET_SSID);
+    int wifi_status = WiFi.begin(SECRET_SSID, SECRET_PASS);
+
+    // Wait a few seconds for connection.
+    delay(5000);
+  }
+
+  // You're connected now, so print out the data.
+  Serial.println("[INFO] Wifi connected!");
 
   // Network is connected....
   if (WiFi.status() == WL_CONNECTED) {
@@ -160,6 +152,8 @@ void post_status(String str) {
     Serial.println("[INFO] Not connected to Wifi!");
     print_wifi_status();
   }
+
+  WiFi.end();
 }
 
 /// @function setup_anemometer
