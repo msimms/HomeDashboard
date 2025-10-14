@@ -76,12 +76,12 @@ float read_soil_moisture_sensor_2() {
 
 /// @function setup_wifi
 void setup_wifi() {
-  Serial.println("Setting up Wifi...");
+  Serial.println("[INFO] Connecting to WiFi...");
 
   // Attempt to connect to Wi-Fi network:
   int wifi_status = WL_IDLE_STATUS;
   while (wifi_status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to the network: ");
+    Serial.print("[INFO] Attempting to connect to the network: ");
     Serial.println(ssid);
     wifi_status = WiFi.begin(ssid, pass);
 
@@ -90,23 +90,23 @@ void setup_wifi() {
   }
 
   // You're connected now, so print out the data.
-  Serial.println("Wifi connected!");
+  Serial.println("[INFO] Wifi connected!");
 }
 
 /// @function print_wifi_status
 void print_wifi_status() {
   // Print the SSID of the attached network.
-  Serial.print("SSID: ");
+  Serial.print("[INFO] SSID: ");
   Serial.println(WiFi.SSID());
 
   // Print the board's IP address.
   IPAddress ip = WiFi.localIP();
-  Serial.print("IP Address: ");
+  Serial.print("[INFO] IP Address: ");
   Serial.println(ip);
 
   // Print the received signal strength.
   long rssi = WiFi.RSSI();
-  Serial.print("Signal strength (RSSI):");
+  Serial.print("[INFO] Signal strength (RSSI):");
   Serial.print(rssi);
   Serial.println(" dBm");
 }
@@ -123,9 +123,9 @@ void post_status(String str) {
     WiFiSSLClient client;
 
     // Connect to the relay client.
-    Serial.println("Sending status...");
+    Serial.println("[INFO] Sending status...");
     if (client.connectSSL(STATUS_URL, STATUS_PORT)) {
-      Serial.println("Connected!");
+      Serial.println("[INFO] Connected!");
 
       // Send the HTTP header
       client.print(String("POST https://") + STATUS_URL + ("/api/1.0/update_status HTTP/1.1\r\n"));
@@ -141,10 +141,10 @@ void post_status(String str) {
 
       // Make sure it's sent.
       client.flush();
-      Serial.println("Status sent!");
+      Serial.println("[INFO] Status sent!");
 
       // Read the response.
-      Serial.println("Reading the response...");
+      Serial.println("[INFO] Reading the response...");
       unsigned long timeout = millis();
       while (client.connected() && millis() - timeout < 5000) {
         if (client.available()) {
@@ -153,36 +153,36 @@ void post_status(String str) {
         }
       }
 
-      Serial.println("Done sending status!");
+      Serial.println("[INFO] Done sending status!");
     } else {
-      Serial.println("Error connecting to the server!");
+      Serial.println("[INFO] Error connecting to the server!");
       print_wifi_status();
     }
     client.stop();
   }
   else {
-    Serial.println("Not connected to Wifi!");
+    Serial.println("[INFO] Not connected to Wifi!");
     print_wifi_status();
   }
 }
 
 /// @function setup_anemometer
 void setup_anemometer() {
-  Serial.println("Setting up the anemometer...");
+  Serial.println("[INFO] Setting up the anemometer...");
   pinMode(A0, INPUT_PULLUP); // Enable internal pull-up resistor on pin A0
-  Serial.println("Done setting up the anemometer...");
+  Serial.println("[INFO] Done setting up the anemometer...");
 }
 
 /// @function setup_am2315
 void setup_am2315() {
-  Serial.println("Setting up the AM2315...");
+  Serial.println("[INFO] Setting up the AM2315...");
 
   Wire.begin();
   DHT.begin();
 
   delay(1000);
 
-  Serial.println("Done setting up the AM2315...");
+  Serial.println("[INFO] Done setting up the AM2315...");
 }
 
 /// @function setup
