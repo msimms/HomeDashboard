@@ -18,10 +18,6 @@
 #define MOISTURE_SENSOR_1 A1
 #define MOISTURE_SENSOR_2 A2
 
-// Wifi
-char ssid[] = SECRET_SSID; // your network SSID (name)
-char pass[] = SECRET_PASS; // your network password (use for WPA, or use as key for WEP)
-
 // The "pin" for the onboard LED.
 int LED = 13;
 
@@ -82,8 +78,8 @@ void setup_wifi() {
   int wifi_status = WL_IDLE_STATUS;
   while (wifi_status != WL_CONNECTED) {
     Serial.print("[INFO] Attempting to connect to the network: ");
-    Serial.println(ssid);
-    wifi_status = WiFi.begin(ssid, pass);
+    Serial.println(SECRET_SSID);
+    wifi_status = WiFi.begin(SECRET_SSID, SECRET_PASS);
 
     // Wait a few seconds for connection.
     delay(5000);
@@ -95,6 +91,7 @@ void setup_wifi() {
 
 /// @function print_wifi_status
 void print_wifi_status() {
+
   // Print the SSID of the attached network.
   Serial.print("[INFO] SSID: ");
   Serial.println(WiFi.SSID());
@@ -113,10 +110,9 @@ void print_wifi_status() {
 
 /// @function post_status
 void post_status(String str) {
+
   // Reconnect to the network, if necessary.
-  if (WiFi.status() != WL_CONNECTED) {
-    setup_wifi();
-  }
+  setup_wifi();
 
   // Network is connected....
   if (WiFi.status() == WL_CONNECTED) {
@@ -187,14 +183,12 @@ void setup_am2315() {
 
 /// @function setup
 void setup() {
+
   // Initialize serial and wait for port to open.
   Serial.begin(9600);
 
   // Set the LED as output.
   pinMode(LED_BUILTIN, OUTPUT);
-
-  // Initialize wifi.
-  setup_wifi();
 
   // Initialize the anemometer.
   setup_anemometer();
@@ -205,6 +199,7 @@ void setup() {
 
 /// @function loop
 void loop() {
+
   // Turn the LED on.
   digitalWrite(LED, HIGH);
 

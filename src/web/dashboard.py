@@ -353,12 +353,22 @@ def handle_api_indoor_air_request(values):
     return True, result
 
 def handle_api_patio_request(values):
-    """Called when an API request for the patio status data is received."""
+    """Called when an API request for the patio status is received."""
     start_ts = 0
     if START_TS in values:
         start_ts = int(values[START_TS])
     db = connect_to_db()
     readings = list(db.retrieve_patio_status(start_ts))
+    result = json.dumps(readings)
+    return True, result
+
+def handle_api_refrigerator_request(values):
+    """Called when an API request for the keg status is received."""
+    start_ts = 0
+    if START_TS in values:
+        start_ts = int(values[START_TS])
+    db = connect_to_db()
+    readings = list(db.retrieve_refrigerator_status(start_ts))
     result = json.dumps(readings)
     return True, result
 
@@ -539,6 +549,8 @@ def handle_api_1_0_get_request(request, values):
         return handle_api_indoor_air_request(values)
     if request == 'patio':
         return handle_api_patio_request(values)
+    if request == 'keg':
+        return handle_api_keg_request(values)
     if request == 'website_status':
         return handle_api_website_status(values)
     if request == 'list_api_keys':

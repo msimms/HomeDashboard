@@ -29,13 +29,6 @@
 #include "Arduino_LED_Matrix.h" // Include the LED_Matrix library
 #include "arduino_secrets.h" 
 
-// Wifi
-char ssid[] = SECRET_SSID; // your network SSID (name)
-char pass[] = SECRET_PASS; // your network password (use for WPA, or use as key for WEP)
-
-// Initialize WiFi.
-WiFiClient g_wifi_client;
-
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 // The pins for I2C are defined by the Wire-library. 
 // On an arduino UNO:       A4(SDA), A5(SCL)
@@ -47,6 +40,9 @@ WiFiClient g_wifi_client;
 #define SCREEN_ADDRESS 0x3C // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 g_display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 ArduinoLEDMatrix g_matrix;  // Create an instance of the ArduinoLEDMatrix class
+
+// The "pin" for the onboard LED.
+int LED = 13;
 
 #define LOGO_HEIGHT 32
 #define LOGO_WIDTH  32
@@ -133,10 +129,6 @@ void draw_logo(void) {
   g_display.display();
 }
 
-/// @function update_builtin_display
-void update_builtin_display(char* msg) {
-}
-
 /// @function update_display
 void update_display(char* msg) {
 
@@ -185,56 +177,51 @@ void setup_wifi() {
     Serial.println("[ERROR] SSID not specified!");
     return;
   }
+}
 
-  Serial.println("[INFO] Connecting to wifi...");
+/// @function print_wifi_status
+void print_wifi_status() {
 
-  // Attempt to connect to Wi-Fi network:
-  while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
-    Serial.print(".");
-    delay(1000);
-  }
+  // Print the SSID of the attached network.
+  Serial.print("[INFO] SSID: ");
+  Serial.println(WiFi.SSID());
 
-  // You're connected now, so print out the data.
-  Serial.println("Wifi connected!");
+  // Print the board's IP address.
+  IPAddress ip = WiFi.localIP();
+  Serial.print("[INFO] IP Address: ");
+  Serial.println(ip);
+
+  // Print the received signal strength.
+  long rssi = WiFi.RSSI();
+  Serial.print("[INFO] Signal strength (RSSI):");
+  Serial.print(rssi);
+  Serial.println(" dBm");
 }
 
 /// @function post_status
-void post_status(String post_data) {
+void post_status(String str) {
 
-  // Make sure we were given a server to connect to.
-  if (strlen(STATUS_URL) == 0) {
-    Serial.println("[ERROR] Status server not specified!");
-    return;
+  WiFi.begin(SECRET_SSID, SECRET_PASS);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500); Serial.print('.');
   }
+  Serial.println("\nWiFi connected.");
 
-  // Make sure the network is actually connected.
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("[ERROR] Not connected to wifi!");
-    return;
-  }
+  WiFiSSLClient ssl; // TLS socket
+  HttpClient http(ssl, STATUS_URL, STATUS_PORT);
+  http.beginRequest();
+  http.post("/api/1.0/update_status");
+  http.sendHeader("Content-Type", "application/json");
+  http.sendHeader("Content-Length", str.length());
+  http.beginBody();
+  http.print(str);
+  http.print("\r\n"); // end of headers
+  http.endRequest();
 
-  // Connect to the status server.
-  Serial.println("[INFO] Sending status...");
-  HttpClient client = HttpClient(g_wifi_client, STATUS_URL, STATUS_PORT);
-
-  // Set headers.
-  client.beginRequest();
-  client.post(STATUS_ENDPOINT);
-  client.sendHeader("Content-Type", "application/json");
-  client.sendHeader("Content-Length", post_data.length());
-  client.beginBody();
-  client.print(post_data);
-  client.endRequest();
-
-  // Get response.
-  int status_code = client.responseStatusCode();
-  String response = client.responseBody();
-
-  // Print the response.
-  Serial.print("[INFO] Http Status Code: ");
-  Serial.println(status_code);
-  Serial.print("[INFO] Http Response: ");
-  Serial.println(response);
+  int status = http.responseStatusCode();
+  String body = http.responseBody();
+  Serial.print("Status: "); Serial.println(status);
+  Serial.println(body);
 }
 
 /// @function setup_scale
@@ -400,25 +387,27 @@ void setup() {
 void loop() {
 
   float weight = 0.0;
-  bool weight_calculated = false;
+
+  // Turn the LED on.
+  digitalWrite(LED, LOW);
 
   // Raw value from the scale.
   float raw_value = read_scale_value();
 
-  // Print all the raw values.
-  Serial.println("[DATA] Raw Values = " + String(raw_value) + ":" + String(g_raw_value_1) + ":" + String(g_raw_value_2) + ":" + String(g_raw_value_3) + ":" + String(g_raw_value_4));
+  // Turn the LED off.
+  digitalWrite(LED, LOW);
 
-  // Calculate weight and update the display.
+  // Is a tare or calibration needed?
   if (!g_tare_set) {
-    Serial.println("[INFO] Tare needed!");
     update_display("Tare needed!");
-    g_matrix.loadFrame(LEDMATRIX_DANGER);
+    g_matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
   }
   else if (!g_cal_set) {
-    Serial.println("[INFO] Calibration needed!");
     update_display("Cal. needed!");
-    g_matrix.loadFrame(LEDMATRIX_DANGER);
+    g_matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
   }
+
+  // Calculate weight and update the display.
   else {
 
     // Convert to weight.
@@ -429,33 +418,38 @@ void loop() {
       update_display_with_weight(buff);
 
       g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
-      weight_calculated = true;
+
+      Serial.print("[DATA] Weight = ");
+      Serial.println(weight, 1);
     }
     else {
-      Serial.print("[ERROR] Unable to read weight!");
+      update_display("Error reading!");
+      Serial.print("[ERROR] Unable to calculate weight!");
       g_matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
     }
   }
 
+  // Print all the raw values.
+  Serial.println("[DATA] Raw Values = " + String(raw_value) + ":" + String(g_raw_value_1) + ":" + String(g_raw_value_2) + ":" + String(g_raw_value_3) + ":" + String(g_raw_value_4) + ":" + String(weight));
+
+  // Update status.
+  char buff[800];
+  snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"refrigerator\", \"api_key\": \"%s\", \"hx711_1\": %u, \"hx711_2\": %u, \"hx711_3\": %u, \"hx711_4\": %u, \"hx711_sum\": %f}", API_KEY, g_raw_value_1, g_raw_value_2, g_raw_value_3, g_raw_value_4, raw_value);
+  Serial.println(buff);
+  post_status(buff);
+
+  // Make sure all serial data has been sent before trying to read.
+  Serial.flush();
+
   // Are we being sent a command?
-  while (Serial.available() > 0) {
+  uint8_t loop_count = 0;
+  while (Serial.available() > 0 && loop_count < 32) {
 
     // Read the command from the serial port.
     char received_char = Serial.read();
 
-    // Read from the scale.
-    if (received_char == 'R') {
-      if (weight_calculated) {
-        Serial.print("[DATA] Weight = ");
-        Serial.println(weight, 1);
-      }
-      else {
-        Serial.println("[ERROR] Weight unavailable due to lack or tare or calibration values!");
-      }
-    }
-
     // Compute a new tare value.
-    else if (received_char == 'T') {
+    if (received_char == 'T') {
       update_display("Tareing...");
 
       g_tare_value = raw_value;
@@ -489,12 +483,11 @@ void loop() {
       Serial.println(g_calibration_value, 1);
       Serial.print("[INFO] Config Weight (g) = ");
       Serial.println(g_calibration_weight, 1);
+
+      update_display("Config Read!");
     }
 
-    // Unknown command.
-    else if (received_char != '\n') {
-      update_display("Unknown command!");
-    }
+    loop_count = loop_count + 1;
   }
 
   // Rate limit.
