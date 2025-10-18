@@ -20,14 +20,88 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+//  Wiring (ESP8266 -> MAX6675):
+//    3V3 -> VCC
+//    GND -> GND
+//    GPIO14 (D5) -> SCK
+//    GPIO12 (D6) -> SO
+//    GPIO5  (D1) -> CS
+//
+//  Payload example:
+//    { "device":"esp-12f-ac-inlet", "celsius": 27.38, "ts": 1734558123 }
+//
+//  Notes:
+//  - Post interval defaults to 5s.
+//  - MAX6675 converts every ~220ms; no need to read faster than ~4–5 Hz.
+//  - For HTTPS, set a fingerprint or (easier but less secure) setInsecure().
+
+#include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClient.h>
+#include <WiFiClientSecureBearSSL.h>
+#include <LittleFS.h>
 #include <max6675.h>
+#include "arduino_secrets.h"
 
 // Pin mapping (change if you wired differently)
-const int PIN_SO   = 12; // GPIO12 (D6)
-const int PIN_CS   = 5;  // GPIO5  (D1)
-const int PIN_SCK  = 14; // GPIO14 (D5)
+const int PIN_SO  = 12; // GPIO12 (D6)
+const int PIN_CS  = 5;  // GPIO5  (D1)
+const int PIN_SCK = 14; // GPIO14 (D5)
 
 MAX6675 tc(PIN_SCK, PIN_CS, PIN_SO);
+
+/// @function post_status
+void post_status(String str) {
+
+  // Attempt to connect to Wi-Fi network:
+  Serial.println("[INFO] Connecting to WiFi...");
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(SECRET_SSID, SECRET_PASS);
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.print("[INFO] Attempting to connect to the network: ");
+    Serial.println(SECRET_SSID);
+    int wifi_status = WiFi.begin(SECRET_SSID, SECRET_PASS);
+
+    // Wait a few seconds for connection.
+    delay(5000);
+  }
+
+  // Network is connected....
+  Serial.println("[INFO] Wifi connected!");
+
+  // Attempt to connect to Wi-Fi network:
+  Serial.println("[INFO] Connecting to WiFi...");
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.print("[INFO] Attempting to connect to the network: ");
+    Serial.println(SECRET_SSID);
+    int wifi_status = WiFi.begin(SECRET_SSID, SECRET_PASS);
+
+    // Wait a few seconds for connection.
+    delay(5000);
+  }
+
+  // Network is connected....
+  Serial.println("[INFO] Wifi connected!");
+  WiFiSSLClient ssl; // TLS socket
+
+  HttpClient http(ssl, STATUS_URL, STATUS_PORT);
+  http.beginRequest();
+  http.post("/api/1.0/update_status");
+  http.sendHeader("Content-Type", "application/json");
+  http.sendHeader("Content-Length", str.length());
+  http.beginBody();
+  http.print(str);
+  http.print("\r\n"); // end of headers
+  http.endRequest();
+
+  int status = http.responseStatusCode();
+  String body = http.responseBody();
+  Serial.print("[INFO] Status: "); Serial.println(status);
+  Serial.println(body);
+
+  WiFi.end();
+}
 
 void setup() {
   Serial.begin(115200);
