@@ -26,6 +26,8 @@ This measures CO<sup>2</sup>, temperature, humidity, and soil moisture. Measurem
 
 ### Software
 
+Copy arduino_secrets_example.h to arduino_secrets.h and fill in the values for your setup.
+
 Build and upload using the Arduino IDE. The target board is the Arduino Nano 33 IoT.
 
 ## Scale
@@ -37,19 +39,30 @@ Build and upload using the Arduino IDE. The target board is the Arduino Nano 33 
 
 ### Software
 
+Copy arduino_secrets_example.h to arduino_secrets.h and fill in the values for your setup.
+
 ## Thermocouple
 
 ### Hardware
 
+* ESP8266 ESP-12 ESP-12F
+* Kiro&Seeu DC 3-5V MAX6675 Module + K Type Thermocouple
+
 ### Software
 
+Copy arduino_secrets_example.h to arduino_secrets.h and fill in the values for your setup.
+
 ## Dashboard App
+
+This exists so for integration with the phone's notification, so the user can get alerts about out-of-range values, etc.
 
 ### Building
 
 This app is built using Apple XCode. Every attempt is made to stay up-to-date with the latest version of XCode and the latest versions of iOS and macOS. In theory, if you have cloned the source code repository and initialized the submodules, then you should be able to open the project in XCode, build, and deploy.
 
 ## Dashboard Website
+
+Intended to be the primary method for viewing data, and also managing the API keys used by the sensors.
 
 ### Building
 
