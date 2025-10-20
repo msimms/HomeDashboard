@@ -658,7 +658,6 @@ def main():
 
     # Random secret key.
     g_flask_app.secret_key = os.urandom(12).hex()
-    print(g_flask_app.secret_key)
 
     # Create the app object. It contains all the functionality.
     print(f"The app is running on http://{args.host}:{args.port}")
