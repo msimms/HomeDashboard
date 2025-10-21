@@ -11,6 +11,15 @@ This measures CO<sup>2</sup>, temperature, humidity, VOC, and VOC index and repo
 * Arudino Nano (ATMega328P)
 * Adafruit SCD-41 - True CO2 Temperature and Humidity Sensor
 
+### Wiring
+
+Pin | |
+-- | -- |
+GND | Sensor GND
+5VDC | Sensor Power
+A4 | Sensor SDA
+A5 | Sensor SCL
+
 ### Software
 
 Build and upload using the Arduino IDE. The target microprocessor is an Arudino Nano (ATMega328P).
@@ -36,6 +45,24 @@ Build and upload using the Arduino IDE. The target board is the Arduino Nano 33 
 
 * Arudino Uno R4 WiFi
 * 4x HX711
+
+### Wiring
+
+Pin | |
+-- | -- |
+GND | Sensor GND
+D4 | DT1
+D5 | SCK1
+D6 | DT2
+D7 | SCK2
+D8 | DT3
+D9 | SCK3
+D10 | DT4
+D11 | SCK4
+GND | Screen GND
+3.3VDC | Screen Power
+A4 | Screen SDA
+A5 | Screen SCL
 
 ### Software
 
