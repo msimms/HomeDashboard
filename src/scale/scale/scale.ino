@@ -138,7 +138,7 @@ void update_display(char* msg) {
   // Message.
   g_display.setTextSize(1); // X pixel scale
   g_display.setTextColor(SSD1306_WHITE); // Draw white text
-  g_display.setCursor(LEFT_TEXT_MARGIN, 14); // Start at top-left corner, after the logo
+  g_display.setCursor(LEFT_TEXT_MARGIN, 16); // Start at top-left corner, after the logo
   g_display.println(msg);
   g_display.display();
 }
@@ -152,7 +152,7 @@ void update_display_with_weight(char* msg) {
   // Message.
   g_display.setTextSize(2); // X pixel scale
   g_display.setTextColor(SSD1306_WHITE); // Draw white text
-  g_display.setCursor(LEFT_TEXT_MARGIN, 14); // Start at top-left corner, after the logo
+  g_display.setCursor(LEFT_TEXT_MARGIN, 12); // Start at top-left corner, after the logo
   g_display.println(msg);
   g_display.display();
 }
@@ -338,8 +338,17 @@ float compute_weight(float measured_value) {
     return (float)ERROR_NUM;
   }
 
+  // Don't go below the floor.
+  if (measured_value < g_tare_value) {
+    return 0.0;
+  }
+
   float m = g_calibration_weight / (g_calibration_value - g_tare_value);
-  float weight = (m * measured_value);
+  float b = 0.0 - (m * g_tare_value);
+  float weight = m * measured_value + b;
+  if (weight < 0.0) {
+    weight = 0.0;
+  }
   return weight;
 }
 
@@ -422,21 +431,16 @@ void loop() {
 
     // Convert to weight.
     weight = compute_weight(raw_value);
-    if (float_is_valid(weight)) {
-      char buff[64];
-      snprintf(buff, sizeof(buff) - 1, "%0.1f g", weight);
-      update_display_with_weight(buff);
 
-      g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
+    // Print.
+    char buff[64];
+    snprintf(buff, sizeof(buff) - 1, "%0.1f g", weight);
+    update_display_with_weight(buff);
 
-      Serial.print("[DATA] Weight = ");
-      Serial.println(weight, 1);
-    }
-    else {
-      update_display("Error reading!");
-      Serial.print("[ERROR] Unable to calculate weight!");
-      g_matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
-    }
+    g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
+
+    Serial.print("[DATA] Weight = ");
+    Serial.println(weight, 1);
   }
 
   // Print all the raw values.
@@ -479,6 +483,7 @@ void loop() {
       Serial.println(g_calibration_value, 1);
       Serial.print("[DATA] Given Weight (g) = ");
       Serial.println(g_calibration_weight, 1);
+      g_cal_set = true;
     }
 
     // Receive configuration values from the command and control computer.
