@@ -1,6 +1,6 @@
 # Home Dashboard
 
-A collection of projects for monitoring things around the house. The motivation for sharing this is so that someone that wants to build their own home dashboard (web app and sensors) can use this to get started.
+A collection of projects for monitoring things around the house. In other words, a smart home that lives on your own infrastructure. The motivation for sharing this is so that someone that wants to build their own home dashboard (web app and sensors) can use this to get started.
 
 ## Indoor Air Quality Microcontroller
 
@@ -35,6 +35,15 @@ This measures CO<sup>2</sup>, temperature, humidity, and soil moisture. Measurem
 
 ### Hardware
 
+* Arduino Nano 33 IoT - https://www.amazon.com/dp/B07WPFQZQ1
+* Adafruit SCD-41 - True CO2 Temperature and Humidity Sensor
+* Moisture Sensors - https://www.amazon.com/dp/B0C6XGRKS5
+
+### Wiring
+
+Pin | |
+-- | -- |
+
 ### Software
 
 Copy arduino_secrets_example.h to arduino_secrets.h and fill in the values for your setup.
@@ -65,6 +74,10 @@ GND | Screen GND
 3.3VDC | Screen Power
 A4 | Screen SDA
 A5 | Screen SCL
+
+### Enclosure
+
+TODO
 
 ### Software
 
