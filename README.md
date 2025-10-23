@@ -10,15 +10,17 @@ This measures CO<sup>2</sup>, temperature, humidity, VOC, and VOC index and repo
 
 * Arudino Nano (ATMega328P)
 * Adafruit SCD-41 - True CO2 Temperature and Humidity Sensor
+* Adafruit SGP30 Air Quality Sensor - https://www.adafruit.com/product/3709
+* MakerFocus 0.91 Inch I2C IIC OLED Display Module 128 x 32 Pixel - https://www.amazon.com/dp/B079BN2J8V
 
 ### Wiring
 
 Pin | |
 -- | -- |
-GND | Sensor GND
-5VDC | Sensor Power
-A4 | Sensor SDA
-A5 | Sensor SCL
+GND | Sensor 1 GND -> Sensor 2 GND -> Screen GND
+5VDC | Sensor 1 Power -> Sensor 2 Power -> Screen Power
+A4 | Sensor 1 SDA -> Sensor 2 SDA -> Screen SDA
+A5 | Sensor 1 SCL -> Sensor 2 SCL -> Screen SCL
 
 ### Software
 
