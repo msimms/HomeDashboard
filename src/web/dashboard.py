@@ -35,6 +35,7 @@ import signal
 import sys
 import time
 import uuid
+import waitress
 import traceback
 import InputChecker
 
@@ -661,7 +662,8 @@ def main():
 
     # Create the app object. It contains all the functionality.
     print(f"The app is running on http://{args.host}:{args.port}")
-    g_flask_app.run(host=args.host, port=args.port)
+    #g_flask_app.run(host=args.host, port=args.port)
+    waitress.serve(g_flask_app, host=args.host, port=args.port)
 
 if __name__=="__main__":
     main()
