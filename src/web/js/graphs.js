@@ -35,8 +35,12 @@ class GraphSettings {
         this.x_axis_label = "secs";
         this.y_axis_labels = [];
         this.multiline = false;
-        this.fill = true;
+        this.fill = true; // Are we coloring in the area under the line?
         this.num_columns = 1;
+        this.min_loaded_x = null; // We don't have data for x values less than this
+        this.max_loaded_x = null; // We don't have data for x values greater than this
+        this.more_data_func = null; // Call this to get more data (settings, min_x, max_x)
+        this.update_func = null; // Called to append data to the graph
     }
 }
 
@@ -160,10 +164,10 @@ function draw_graph(data, settings, column_index = 0) {
     }
 
     // Define scales.
-    var min_x = d3.min(data, d => d.x);
-    var max_x = d3.max(data, d => d.x);
+    settings.min_loaded_x = d3.min(data, d => d.x);
+    settings.max_loaded_x = d3.max(data, d => d.x);
     var x_scale = d3.scaleLinear()
-        .domain([min_x, max_x])
+        .domain([settings.min_loaded_x, settings.max_loaded_x])
         .range([0, column_width]);
 
     // If we were given labels then we have a non-numeric graph.
@@ -302,6 +306,14 @@ function draw_graph(data, settings, column_index = 0) {
         var new_x_scale = d3.event.transform.rescaleX(x_scale);
         var new_y_scale = d3.event.transform.rescaleY(y_scale);
 
+        // Do we need more data?
+        let [min_x, max_x] = new_x_scale.domain();
+        if (min_x < settings.min_loaded_x || max_x < settings.max_loaded_x) {
+            if (settings.more_data_func) {
+                settings.more_data_func(settings, min_x, max_x);
+            }
+        }
+
         // Update axes with these new boundaries.
         x_axis.call(d3.axisBottom(new_x_scale).tickFormat(d3.timeFormat("%X")));
         y_axis.call(d3.axisLeft(new_y_scale));
@@ -328,6 +340,8 @@ function draw_graph(data, settings, column_index = 0) {
 
         // Concatenate. Need to do this so that tooltips work.
         data = data.concat(new_data);
+
+        // Sort.
 
         // Re-scale.
         x_scale.domain([0, d3.max(data, d => d.x)]);

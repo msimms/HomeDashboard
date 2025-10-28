@@ -27,6 +27,11 @@
 <script src="${root_url}/js/graphs.js"></script>
 <script>
 
+    function fetch_more_graph_data(settings, min_x, max_x) {
+        ;
+    }
+
+    /// @function create_graph_settings
     function create_graph_settings(element_id, label, unit_label, color, height) {
         var settings = new GraphSettings();
         settings.element_id = element_id;
@@ -35,6 +40,7 @@
         settings.color = color;
         settings.height = height;
         settings.fill = false;
+        settings.more_data_func = fetch_more_graph_data;
         return settings;
     }
 
@@ -44,7 +50,9 @@
 
         send_get_request_async(api_url, function (response_code, response_text) {
             if (response_code == 200) {
+                const CHART_HEIGHT = 250;
                 const records = JSON.parse(response_text);
+
                 var co2_readings = [];
                 var temp_readings = [];
                 var humidity_readings = [];
@@ -61,19 +69,19 @@
                 }
 
                 if (co2_readings.length > 0) {
-                    draw_graph(co2_readings, create_graph_settings("co2_chart", "Indoor CO2", "PPM", "yellow", 250));
+                    draw_graph(co2_readings, create_graph_settings("co2_chart", "Indoor CO2", "PPM", "yellow", CHART_HEIGHT));
                 }
                 if (temp_readings.length > 0) {
-                    draw_graph(temp_readings, create_graph_settings("temp_chart", "Indoor Temperature", "C", "red", 250));
+                    draw_graph(temp_readings, create_graph_settings("temp_chart", "Indoor Temperature", "C", "red", CHART_HEIGHT));
                 }
                 if (humidity_readings.length > 0) {
-                    draw_graph(humidity_readings, create_graph_settings("humidity_chart", "Indoor Humidity", "%", "blue", 250));
+                    draw_graph(humidity_readings, create_graph_settings("humidity_chart", "Indoor Humidity", "%", "blue", CHART_HEIGHT));
                 }
                 if (voc_readings.length > 0) {
-                    draw_graph(voc_readings, create_graph_settings("voc_chart", "VOC", "", "green", 250));
+                    draw_graph(voc_readings, create_graph_settings("voc_chart", "VOC", "", "green", CHART_HEIGHT));
                 }
                 if (voc_index_readings.length > 0) {
-                    draw_graph(voc_index_readings, create_graph_settings("voc_index_chart", "VOC Index", "", "green", 250));
+                    draw_graph(voc_index_readings, create_graph_settings("voc_index_chart", "VOC Index", "", "green", CHART_HEIGHT));
                 }
             }
         });
