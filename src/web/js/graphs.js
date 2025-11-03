@@ -44,6 +44,15 @@ class GraphSettings {
     }
 }
 
+/// @function graph_data_sort
+function graph_data_sort(a, b) {
+    if (a.x < b.x)
+        return 1;
+    if (a.x > b.x)
+        return -1;
+    return 0;
+}
+
 /// @function draw_graph
 /// A function that allows the graph to be updated is returned.
 function draw_graph(data, settings, column_index = 0) {
@@ -338,10 +347,15 @@ function draw_graph(data, settings, column_index = 0) {
     // Function to update chart.
     function update(new_data) {
 
+        // Scale.
+        new_data = new_data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
+
         // Concatenate. Need to do this so that tooltips work.
         data = data.concat(new_data);
 
-        // Sort.
+        // Sort and remove duplicates.
+        data.reduce((res, item) => (res.every(resItem => resItem.x != item.x) ? res.push(item) : true, res), [])
+            .sort(graph_data_sort);
 
         // Re-scale.
         x_scale.domain([0, d3.max(data, d => d.x)]);
@@ -368,7 +382,7 @@ function draw_graph(data, settings, column_index = 0) {
         x_axis.call(d3.axisBottom(x_scale));
         y_axis.call(d3.axisLeft(y_scale));
     }
-    return update;
+    settings.update_func = update;
 }
 
 /// @function draw_bar_chart

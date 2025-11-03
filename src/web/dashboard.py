@@ -347,7 +347,7 @@ def handle_api_indoor_air_request(values):
     """Called when an API request for the indoor air status data is received."""
     start_ts = 0
     if START_TS in values:
-        start_ts = int(values[START_TS])
+        start_ts = int(float(values[START_TS]))
     db = connect_to_db()
     readings = list(db.retrieve_air_quality(start_ts))
     result = json.dumps(readings)
@@ -357,7 +357,7 @@ def handle_api_patio_request(values):
     """Called when an API request for the patio status is received."""
     start_ts = 0
     if START_TS in values:
-        start_ts = int(values[START_TS])
+        start_ts = int(float(values[START_TS]))
     db = connect_to_db()
     readings = list(db.retrieve_patio_status(start_ts))
     result = json.dumps(readings)
@@ -367,7 +367,7 @@ def handle_api_refrigerator_request(values):
     """Called when an API request for the keg status is received."""
     start_ts = 0
     if START_TS in values:
-        start_ts = int(values[START_TS])
+        start_ts = int(float(values[START_TS]))
     db = connect_to_db()
     readings = list(db.retrieve_refrigerator_status(start_ts))
     result = json.dumps(readings)
@@ -377,7 +377,7 @@ def handle_api_website_status(values):
     """Called when an API request for the website status data is received."""
     start_ts = 0
     if START_TS in values:
-        start_ts = int(values[START_TS])
+        start_ts = int(float(values[START_TS]))
     db = connect_to_db()
     readings = list(db.retrieve_website_status(start_ts))
     result = json.dumps(readings)

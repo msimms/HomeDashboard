@@ -27,8 +27,16 @@
 <script src="${root_url}/js/graphs.js"></script>
 <script>
 
+    /// @function fetch_more_graph_data
     function fetch_more_graph_data(settings, min_x, max_x) {
-        ;
+        if (settings.element_id == "co2_chart" || settings.element_id == "temp_chart" || settings.element_id == "humidity_chart" ||
+            element_id == "voc_chart" || element_id == "voc_index_chart") {
+            get_indoor_air_quality_readings(min_x / 1000.0, settings);
+        }
+        else if (settings.element_id == "temperature" || settings.element_id == "humidity" ||
+            settings.element_id == "moisture_sensor_1" || settings.element_id == "moisture_sensor_2") {
+            get_patio_monitor_readings(min_x / 1000.0, settings);
+        }
     }
 
     /// @function create_graph_settings
@@ -45,7 +53,7 @@
     }
 
     /// @function get_indoor_air_quality_readings
-    function get_indoor_air_quality_readings(start_ts) {
+    function get_indoor_air_quality_readings(start_ts, graph_settings) {
         let api_url = "${root_url}/api/1.0/indoor_air?start_ts=" + start_ts
 
         send_get_request_async(api_url, function (response_code, response_text) {
@@ -69,26 +77,51 @@
                 }
 
                 if (co2_readings.length > 0) {
-                    draw_graph(co2_readings, create_graph_settings("co2_chart", "Indoor CO2", "PPM", "yellow", CHART_HEIGHT));
+                    if (graph_settings == null) {
+                        draw_graph(co2_readings, create_graph_settings("co2_chart", "Indoor CO2", "PPM", "yellow", CHART_HEIGHT));
+                    }
+                    else {
+                        graph_settings.update_func(co2_readings);
+                    }
                 }
                 if (temp_readings.length > 0) {
-                    draw_graph(temp_readings, create_graph_settings("temp_chart", "Indoor Temperature", "C", "red", CHART_HEIGHT));
+                    if (graph_settings == null) {
+                        draw_graph(temp_readings, create_graph_settings("temp_chart", "Indoor Temperature", "C", "red", CHART_HEIGHT));
+                    }
+                    else {
+                        graph_settings.update_func(co2_readings);
+                    }
                 }
                 if (humidity_readings.length > 0) {
-                    draw_graph(humidity_readings, create_graph_settings("humidity_chart", "Indoor Humidity", "%", "blue", CHART_HEIGHT));
+                    if (graph_settings == null) {
+                        draw_graph(humidity_readings, create_graph_settings("humidity_chart", "Indoor Humidity", "%", "blue", CHART_HEIGHT));
+                    }
+                    else {
+                        graph_settings.update_func(co2_readings);
+                    }
                 }
                 if (voc_readings.length > 0) {
-                    draw_graph(voc_readings, create_graph_settings("voc_chart", "VOC", "", "green", CHART_HEIGHT));
+                    if (graph_settings == null) {
+                        draw_graph(voc_readings, create_graph_settings("voc_chart", "VOC", "", "green", CHART_HEIGHT));
+                    }
+                    else {
+                        graph_settings.update_func(co2_readings);
+                    }
                 }
                 if (voc_index_readings.length > 0) {
-                    draw_graph(voc_index_readings, create_graph_settings("voc_index_chart", "VOC Index", "", "green", CHART_HEIGHT));
+                    if (graph_settings == null) {
+                        draw_graph(voc_index_readings, create_graph_settings("voc_index_chart", "VOC Index", "", "green", CHART_HEIGHT));
+                    }
+                    else {
+                        graph_settings.update_func(co2_readings);
+                    }
                 }
             }
         });
     }
 
     /// @function get_patio_monitor_readings
-    function get_patio_monitor_readings(start_ts) {
+    function get_patio_monitor_readings(start_ts, graph_settings) {
         let api_url = "${root_url}/api/1.0/patio?start_ts=" + start_ts
 
         send_get_request_async(api_url, function (response_code, response_text) {
@@ -108,23 +141,43 @@
                 }
 
                 if (temp_readings.length > 0) {
-                    draw_graph(temp_readings, create_graph_settings("temp_chart", "Patio Temperature", "C", "red", 250));
+                    if (graph_settings == null) {
+                        draw_graph(temp_readings, create_graph_settings("temp_chart", "Patio Temperature", "C", "red", 250));
+                    }
+                    else {
+                        graph_settings.update_func(co2_readings);
+                    }
                 }
                 if (humidity_readings.length > 0) {
-                    draw_graph(humidity_readings, create_graph_settings("humidity_chart", "Patio Humidity", "%", "blue", 250));
+                    if (graph_settings == null) {
+                        draw_graph(humidity_readings, create_graph_settings("humidity_chart", "Patio Humidity", "%", "blue", 250));
+                    }
+                    else {
+                        graph_settings.update_func(co2_readings);
+                    }
                 }
                 if (moisture_sensor_1_readings.length > 0) {
-                    draw_graph(moisture_sensor_1_readings, create_graph_settings("moisture_sensor_1_chart", "Moisture Sensor #1", "%", "green", 250));
+                    if (graph_settings == null) {
+                        draw_graph(moisture_sensor_1_readings, create_graph_settings("moisture_sensor_1_chart", "Moisture Sensor #1", "%", "green", 250));
+                    }
+                    else {
+                        graph_settings.update_func(co2_readings);
+                    }
                 }
                 if (moisture_sensor_2_readings.length > 0) {
-                    draw_graph(moisture_sensor_2_readings, create_graph_settings("moisture_sensor_2_chart", "Moisture Sensor #2", "%", "green", 250));
+                    if (graph_settings == null) {
+                        draw_graph(moisture_sensor_2_readings, create_graph_settings("moisture_sensor_2_chart", "Moisture Sensor #2", "%", "green", 250));
+                    }
+                    else {
+                        graph_settings.update_func(co2_readings);
+                    }
                 }
             }
         });
     }
 
     /// @function get_website_status
-    function get_website_status(start_ts) {
+    function get_website_status(start_ts, graph_settings) {
         let api_url = "${root_url}/api/1.0/website_status?start_ts=" + start_ts
 
         send_get_request_async(api_url, function (response_code, response_text) {
@@ -159,11 +212,11 @@
     /// @function get_readings
     function get_readings() {
         var yesterday = new Date(new Date().getTime() - (24 * 60 * 60 * 1000));
-        var yesterday_ts = Math.floor(yesterday.getTime() / 1000);
+        var yesterday_ts = Math.floor(yesterday.getTime() / 1000.0);
 
-        get_indoor_air_quality_readings(yesterday_ts);
-        get_patio_monitor_readings(yesterday_ts);
-        get_website_status(yesterday_ts);
+        get_indoor_air_quality_readings(yesterday_ts, null);
+        get_patio_monitor_readings(yesterday_ts, null);
+        get_website_status(yesterday_ts, null);
     }
 
     get_readings();
