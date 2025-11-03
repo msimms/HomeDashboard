@@ -90,6 +90,15 @@ Copy arduino_secrets_example.h to arduino_secrets.h and fill in the values for y
 * ESP8266 ESP-12 ESP-12F
 * Kiro&Seeu DC 3-5V MAX6675 Module + K Type Thermocouple
 
+### Wiring
+
+ESP8266 Pin | MAX6675 Pin |
+-- | -- |
+GND | GND
+D6 | 12
+D1 | 4
+D5 | 14
+
 ### Software
 
 Copy arduino_secrets_example.h to arduino_secrets.h and fill in the values for your setup.
