@@ -59,8 +59,6 @@ function draw_graph(data, settings, column_index = 0) {
     let parent = "#charts";
     let parent_width = document.getElementById("charts").offsetWidth;
 
-    data = data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
-
     let margin = { top: 20, right: 0, bottom: 40, left: 80 };
 
     let total_width = parent_width - margin.left - margin.right; // usable width
@@ -71,6 +69,9 @@ function draw_graph(data, settings, column_index = 0) {
 
     let svg_width = column_width;
     let svg_height = height + margin.top + margin.bottom;
+
+    // Scale the data to milliseconds.
+    data = data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
 
     let tooltip = d3.select("#charts")
         .append("div")
@@ -311,43 +312,50 @@ function draw_graph(data, settings, column_index = 0) {
     // A function that updates the chart when the user zoom and thus new boundaries are available.
     function rescale_chart() {
 
-        // Rescale the axes.
-        var new_x_scale = d3.event.transform.rescaleX(x_scale);
-        var new_y_scale = d3.event.transform.rescaleY(y_scale);
+        // Get the axis scales.
+        let [min_x, max_x] = x_scale.domain();
 
         // Do we need more data?
-        let [min_x, max_x] = new_x_scale.domain();
-        if (min_x < settings.min_loaded_x || max_x < settings.max_loaded_x) {
+        if (min_x < settings.min_loaded_x || max_x > settings.max_loaded_x) {
             if (settings.more_data_func) {
-                settings.more_data_func(settings, min_x, max_x);
+                if (min_x < settings.min_loaded_x) {
+                    settings.min_loaded_x = min_x;
+                }
+                if (max_x > settings.max_loaded_x) {
+                    settings.max_loaded_x = max_x;
+                }
+                settings.more_data_func(settings, settings.min_loaded_x, settings.max_loaded_x);
             }
         }
-
-        // Update axes with these new boundaries.
-        x_axis.call(d3.axisBottom(new_x_scale).tickFormat(d3.timeFormat("%X")));
-        y_axis.call(d3.axisLeft(new_y_scale));
-
-        // Re-render the line using the rescaled axes.
-        const zline = d3.line().x(d => new_x_scale(d.x)).y(d => new_y_scale(d.y));
-        if (settings.fill) {
-            area = d3.area()
-                .x(d => new_x_scale(d.x))
-                .y0(height)
-                .y1(d => new_y_scale(d.y));
-            area_path.attr("d", zline)
-                .attr('fill', 'url(#gradient_' + settings.element_id + ')')
-                .attr("d", area);
-        }
         else {
-            area_path.attr("d", zline);
-            line_path.attr("d", zline);
+            // Rescale the axes.
+            x_scale = d3.event.transform.rescaleX(x_scale);
+            y_scale = d3.event.transform.rescaleY(y_scale);
+
+            // Re-render the line using the rescaled axes.
+            const zline = d3.line()
+                .x(d => x_scale(d.x))
+                .y(d => y_scale(d.y));
+            if (settings.fill) {
+                area = d3.area()
+                    .x(d => x_scale(d.x))
+                    .y0(height)
+                    .y1(d => y_scale(d.y));
+                area_path.attr("d", zline)
+                    .attr('fill', 'url(#gradient_' + settings.element_id + ')')
+                    .attr("d", area);
+            }
+            else {
+                area_path.attr("d", zline);
+                line_path.attr("d", zline);
+            }
         }
     }
 
     // Function to update chart.
     function update(new_data) {
 
-        // Scale.
+        // Scale the data to milliseconds.
         new_data = new_data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
 
         // Concatenate. Need to do this so that tooltips work.
@@ -358,7 +366,7 @@ function draw_graph(data, settings, column_index = 0) {
             .sort(graph_data_sort);
 
         // Re-scale.
-        x_scale.domain([0, d3.max(data, d => d.x)]);
+        x_scale.domain([d3.min(data, d => d.x), d3.max(data, d => d.x)]);
         if (settings.y_axis_labels.length == 0) {
             y_scale.domain([d3.min(data, d => d.y), d3.max(data, d => d.y)]);
         }
