@@ -374,14 +374,14 @@ function draw_graph(data, settings, column_index = 0) {
         // Update the line and area.
         if (settings.fill) {
             plot.select("path")
-                .datum(new_data)
+                .datum(data)
                 .attr("d", line)
                 .attr("d", area)
                 .attr("id", "pointline");
         }
         else {
             plot.select("path")
-                .datum(new_data)
+                .datum(data)
                 .attr("d", line)
                 .attr("id", "pointline");
         }
