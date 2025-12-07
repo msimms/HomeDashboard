@@ -172,6 +172,7 @@ void setup() {
 
   // Initialize serial and wait for port to open.
   Serial.begin(9600);
+  Serial.println("Initializing....");
 
   // Set the LED as output.
   pinMode(LED_BUILTIN, OUTPUT);
