@@ -10,6 +10,7 @@
 
 <link rel="stylesheet" type="text/css" href="${root_url}/css/normalize.css">
 <link rel="stylesheet" type="text/css" href="${root_url}/css/site.css">
+<link rel="stylesheet" type="text/css" href="${root_url}/css/gauges.css">
 <link rel="stylesheet" type="text/css" href="${root_url}/css/graphs.css">
 <link rel="shortcut icon" href="${root_url}/media/favicon.ico">
 
@@ -19,13 +20,75 @@
 
 <body>
 
+<!-- Gauges Start -->
+<div id="gauges" class="block">
+    <div>
+        <h3>Indoor CO<sup>2</sup></h3>
+        <canvas id="indoor-co2-gauge"></canvas>
+    </div>
+</div>
+<!-- Gauges End -->
+
+<!-- Graphs Start -->
 <div id="charts" class="charts">
 </div>
+<!-- Graphs End -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js" integrity="sha512-RJJ1NNC88QhN7dwpCY8rm/6OxI+YdQP48DrLGe/eSAd+n+s1PXwQkkpzzAgoJe4cZFW2GALQoxox61gSY2yQfg==" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/gaugeJS/dist/gauge.min.js"></script>
 <script src="${root_url}/js/common.js"></script>
 <script src="${root_url}/js/graphs.js"></script>
 <script>
+
+    var g_co2_guage = null;
+
+    /// @function draw_co2_gauge
+    /// Creates a co2 gauge.
+    function draw_co2_gauge(element_id) {
+        // Gauge options
+        var opts = {
+            angle: 0.15, // Span of the gauge arc (0 = full circle, 0.15 ~ half circle)
+            lineWidth: 0.25, // Relative thickness
+            radiusScale: 1.0,
+
+            pointer: {
+                length: 0.7, // Relative to gauge radius
+                strokeWidth: 0.04,
+                color: "#aaaaaa"
+            },
+
+            // Background zones for the arc
+            staticZones: [
+                { strokeStyle: "#30B32D", min: 0,    max: 800 },  // Green
+                { strokeStyle: "#FFDD00", min: 800,  max: 1500 }, // Yellow
+                { strokeStyle: "#F03E3E", min: 1500, max: 2000 }  // Red
+            ],
+
+            // Value labels around the arc
+            staticLabels: {
+                font: "12px sans-serif",
+                labels: [0, 400, 800, 1200, 1600, 2000],
+                color: "#aaaaaa",
+                fractionDigits: 0
+            },
+
+            // Style of the remaining (unused) arc
+            strokeColor: "#E0E0E0",
+            limitMax: true,
+            limitMin: true,
+            highDpiSupport: true
+        };
+
+        var target = document.getElementById(element_id);
+        var gauge  = new Gauge(target).setOptions(opts);
+
+        // Configure the range.
+        gauge.maxValue = 2000;
+        gauge.setMinValue(0);
+        gauge.animationSpeed = 32;
+
+        return gauge;
+    }
 
     /// @function fetch_more_graph_data
     function fetch_more_graph_data(settings, min_x, max_x) {
@@ -83,6 +146,7 @@
                     else {
                         graph_settings.update_func(co2_readings);
                     }
+                    g_co2_guage.set(co2_readings.at(-1).y);
                 }
                 if (temp_readings.length > 0) {
                     if (graph_settings == null) {
@@ -218,6 +282,10 @@
         get_patio_monitor_readings(yesterday_ts, null);
         get_website_status(yesterday_ts, null);
     }
+
+
+    g_co2_guage = draw_co2_gauge("indoor-co2-gauge");
+    g_co2_guage.set(0);
 
     get_readings();
 
