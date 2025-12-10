@@ -27,6 +27,7 @@
 /// Encapsulates graph settings to reduce the number of things we need to pass to the draw functions.
 class GraphSettings {
     constructor() {
+        this.data = [];
         this.element_id = "";
         this.label = "";
         this.unit_label = "";
@@ -70,8 +71,7 @@ function draw_graph(data, settings, column_index = 0) {
     let svg_width = column_width;
     let svg_height = height + margin.top + margin.bottom;
 
-    // Scale the data to milliseconds.
-    data = data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
+    settings.data = data;
 
     let tooltip = d3.select("#charts")
         .append("div")
@@ -93,10 +93,10 @@ function draw_graph(data, settings, column_index = 0) {
     }
     let mousemove = function() {
         let coordinates = d3.mouse(this);
-        let x = Math.floor((coordinates[0] / column_width) * data.length);
+        let x = Math.floor((coordinates[0] / column_width) * settings.data.length);
 
-        if (x >= 0 && x < data.length) {
-            let value = data[x].y;
+        if (x >= 0 && x < settings.data.length) {
+            let value = settings.data[x].y;
             var y_str = "";
 
             if (typeof value == "string") {
@@ -108,7 +108,7 @@ function draw_graph(data, settings, column_index = 0) {
 
             if (y_str.length > 0) {
                 tooltip
-                    .html("<b>" + unix_time_to_local_string(data[x].x) + ", " + y_str + " " + settings.unit_label + "</b>")
+                    .html("<b>" + unix_time_to_local_string(settings.data[x].x) + ", " + y_str + " " + settings.unit_label + "</b>")
                     .style("top", (event.pageY) + "px")
                     .style("left", (event.pageX) + "px")
             }
@@ -174,8 +174,8 @@ function draw_graph(data, settings, column_index = 0) {
     }
 
     // Define scales.
-    settings.min_loaded_x = d3.min(data, d => d.x);
-    settings.max_loaded_x = d3.max(data, d => d.x);
+    settings.min_loaded_x = d3.min(settings.data, d => d.x);
+    settings.max_loaded_x = d3.max(settings.data, d => d.x);
     var x_scale = d3.scaleLinear()
         .domain([settings.min_loaded_x, settings.max_loaded_x])
         .range([0, column_width]);
@@ -187,12 +187,8 @@ function draw_graph(data, settings, column_index = 0) {
             .range([height, 0]);
     }
     else {
-        var max_y = d3.max(data, d => d.y);
-        if (max_y < 1.0) {
-            max_y = 1.0;
-        }
         var y_scale = d3.scaleLinear()
-            .domain([d3.min(data, d => d.y), max_y])
+            .domain([d3.min(settings.data, d => d.y), d3.max(settings.data, d => d.y) + 1.0])
             .range([height, 0]);
     }
 
@@ -208,13 +204,13 @@ function draw_graph(data, settings, column_index = 0) {
             .y0(height)
             .y1(d => y_scale(d.y));
         var area_path = plot.append("path")
-            .datum(data)
+            .datum(settings.data)
             .attr('fill', 'url(#gradient_' + settings.element_id + ')')
             .attr("d", area);
     }
     else {
         var area_path = plot.append("path")
-            .datum(data)
+            .datum(settings.data)
             .attr("stroke", settings.color)
             .attr("stroke-width", 3)
             .attr("d", line)
@@ -223,7 +219,7 @@ function draw_graph(data, settings, column_index = 0) {
     // Draw the initial data line.
     if (settings.fill) {
         var line_path = plot.append("path")
-            .datum(data)
+            .datum(settings.data)
             .attr("fill", settings.color)
             .attr("stroke", settings.color)
             .attr("stroke-width", 3)
@@ -232,7 +228,7 @@ function draw_graph(data, settings, column_index = 0) {
     }
     else {
         var line_path = plot.append("path")
-            .datum(data)
+            .datum(settings.data)
             .attr("stroke", settings.color)
             .attr("stroke-width", 3)
             .attr("d", line)
@@ -293,7 +289,7 @@ function draw_graph(data, settings, column_index = 0) {
             .text(settings.unit_label);
     }
 
-    // Set the zoom and Pan features: how much you can zoom, on which part, and what to do when there is a zoom.
+    // Set the zoom and pan features: how much you can zoom, on which part, and what to do when there is a zoom.
     var zoom = d3.zoom()
         .scaleExtent([.5, 20])  // This controls how much you can unzoom (x0.5) and zoom (x20)
         .extent([[0, 0], [column_width, height]])
@@ -355,33 +351,30 @@ function draw_graph(data, settings, column_index = 0) {
     // Function to update chart.
     function update(new_data) {
 
-        // Scale the data to milliseconds.
-        new_data = new_data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
-
         // Concatenate. Need to do this so that tooltips work.
-        data = data.concat(new_data);
+        settings.data = settings.data.concat(new_data);
 
         // Sort and remove duplicates.
-        data.reduce((res, item) => (res.every(resItem => resItem.x != item.x) ? res.push(item) : true, res), [])
+        settings.data.reduce((res, item) => (res.every(resItem => resItem.x != item.x) ? res.push(item) : true, res), [])
             .sort(graph_data_sort);
 
         // Re-scale.
-        x_scale.domain([d3.min(data, d => d.x), d3.max(data, d => d.x)]);
+        x_scale.domain([d3.min(settings.data, d => d.x), d3.max(settings.data, d => d.x)]);
         if (settings.y_axis_labels.length == 0) {
-            y_scale.domain([d3.min(data, d => d.y), d3.max(data, d => d.y)]);
+            y_scale.domain([d3.min(settings.data, d => d.y), d3.max(settings.data, d => d.y) + 1.0]);
         }
 
         // Update the line and area.
         if (settings.fill) {
             plot.select("path")
-                .datum(data)
+                .datum(settings.data)
                 .attr("d", line)
                 .attr("d", area)
                 .attr("id", "pointline");
         }
         else {
             plot.select("path")
-                .datum(data)
+                .datum(settings.data)
                 .attr("d", line)
                 .attr("id", "pointline");
         }
