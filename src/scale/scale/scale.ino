@@ -80,8 +80,7 @@ static const unsigned char PROGMEM g_logo_bmp[] =
   0x00, 0xF8, 0x1F, 0x00,
   0x00, 0x3F, 0xFC, 0x00,
   0x00, 0x05, 0xC0, 0x00,
-  0x00, 0x00, 0x00, 0x00
-};
+  0x00, 0x00, 0x00, 0x00 };
   
 // HX711 circuit wiring for three load cells.
 const int LOADCELL1_DOUT_PIN = 2;
@@ -114,60 +113,6 @@ float g_calibration_value = 0.0;
 float g_calibration_weight = 0.0;
 bool g_tare_set = false;
 bool g_cal_set = false;
-
-/// @function float_is_valid
-bool float_is_valid(float num) {
-  return num >= 0.001;
-}
-
-/// @function draw_logo
-void draw_logo(void) {
-  g_display.clearDisplay();
-  g_display.drawBitmap(LEFT_LOGO_MARGIN,
-    ((g_display.height() - LOGO_HEIGHT) / 2) + 2,
-    g_logo_bmp, LOGO_WIDTH, LOGO_HEIGHT, 1);
-  g_display.display();
-}
-
-/// @function update_display
-void update_display(char* msg) {
-
-  // Logo.
-  draw_logo();
-
-  // Message.
-  g_display.setTextSize(1); // X pixel scale
-  g_display.setTextColor(SSD1306_WHITE); // Draw white text
-  g_display.setCursor(LEFT_TEXT_MARGIN, 16); // Start at top-left corner, after the logo
-  g_display.println(msg);
-  g_display.display();
-}
-
-/// @function update_display_with_weight
-void update_display_with_weight(char* msg) {
-
-  // Logo.
-  draw_logo();
-
-  // Message.
-  g_display.setTextSize(2); // X pixel scale
-  g_display.setTextColor(SSD1306_WHITE); // Draw white text
-  g_display.setCursor(LEFT_TEXT_MARGIN, 12); // Start at top-left corner, after the logo
-  g_display.println(msg);
-  g_display.display();
-}
-
-/// @function setup_display
-void setup_display(void) {
-
-  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-  if (g_display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    draw_logo();
-  }
-  else {
-    Serial.println("[ERROR] SSD1306 allocation failed!");
-  }
-}
 
 /// @function setup_wifi
 void setup_wifi() {
@@ -232,6 +177,61 @@ void post_status(String str) {
   Serial.println(body);
 
   WiFi.end();
+}
+
+/// @function float_is_valid
+bool float_is_valid(float num) {
+  return num >= 0.001;
+}
+
+/// @function draw_logo
+void draw_logo(void) {
+  g_display.clearDisplay();
+  g_display.drawBitmap(LEFT_LOGO_MARGIN,
+    ((g_display.height() - LOGO_HEIGHT) / 2) + 2,
+    g_logo_bmp, LOGO_WIDTH, LOGO_HEIGHT, 1);
+  g_display.display();
+}
+
+/// @function update_display
+void update_display(char* msg) {
+
+  // Logo.
+  draw_logo();
+
+  // Message.
+  g_display.setTextSize(1); // X pixel scale
+  g_display.setTextColor(SSD1306_WHITE); // Draw white text
+  g_display.setCursor(LEFT_TEXT_MARGIN, 16); // Start at top-left corner, after the logo
+  g_display.println(msg);
+  g_display.display();
+}
+
+/// @function update_display_with_weight
+void update_display_with_weight(char* msg) {
+
+  // Logo.
+  draw_logo();
+
+  // Message.
+  g_display.setTextSize(2); // X pixel scale
+  g_display.setTextColor(SSD1306_WHITE); // Draw white text
+  g_display.setCursor(LEFT_TEXT_MARGIN, 12); // Start at top-left corner, after the logo
+  g_display.println(msg);
+  g_display.display();
+}
+
+/// @function setup_display
+/// Configures the external LCD.
+void setup_display(void) {
+
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if (g_display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    draw_logo();
+  }
+  else {
+    Serial.println("[ERROR] SSD1306 allocation failed!");
+  }
 }
 
 /// @function setup_scale
@@ -337,6 +337,14 @@ float compute_weight(float measured_value) {
     Serial.println("[ERROR] Not calibrated!");
     return (float)ERROR_NUM;
   }
+  if (!float_is_valid(g_tare_value)) {
+    Serial.println("[ERROR] Invalid tare value!");
+    return (float)ERROR_NUM;
+  }
+  if (!float_is_valid(g_calibration_value)) {
+    Serial.println("[ERROR] Invalid calibration value!");
+    return (float)ERROR_NUM;
+  }
 
   // Don't go below the floor.
   if (measured_value < g_tare_value) {
@@ -356,24 +364,66 @@ float compute_weight(float measured_value) {
 /// Reads a comma separated list of tare value, calibration value, and calibration weight (in g)
 /// from the serial input.
 void read_config_values() {
+
+  // Is any data available?
   if (Serial.available() > 0) {
-    char c = Serial.read();
-    g_tare_value = Serial.parseFloat();
-    c = Serial.read();
-    g_calibration_value = Serial.parseFloat();
-    c = Serial.read();
-    g_calibration_weight = Serial.parseFloat();
-    g_tare_set = true;
-    g_cal_set = true;
+
+    // The tare value should be first.
+    char c = Serial.read(); // Consume space or newline
+    float value = Serial.parseFloat();
+
+    // Sanity check the value. Return on error.
+    if (float_is_valid(value)) {
+      g_tare_value = value;
+      g_tare_set = true;
+    }
+    else {
+      return;
+    }
+
+    // The calibration scale value should be second.
+    c = Serial.read(); // Consume space or newline
+    value = Serial.parseFloat();
+
+    // Sanity check the value. Return on error.
+    if (float_is_valid(value)) {
+      g_calibration_value = value;
+    }
+    else {
+      return;
+    }
+
+    // The calibration weight should be third.
+    c = Serial.read(); // Consume space or newline
+    value = Serial.parseFloat();
+
+    // Sanity check the value. Return on error.
+    if (float_is_valid(value)) {
+      g_calibration_weight = value;
+      g_cal_set = true;
+    }
+    else {
+      return;
+    }
   }
 }
 
 /// @function read_given_weight_value
 /// Reads the calibration weight (in g) from the serial input.
 void read_given_weight_value(void) {
+
+  // Is any data available?
   if (Serial.available() > 0) {
-    char c = Serial.read();
-    g_calibration_weight = Serial.parseFloat();
+
+    // There should be a space or newline followed by the calibration weight, in grams.
+    char c = Serial.read(); // Consume space or newline
+    float value = Serial.parseFloat();
+
+    // Sanity check the value.
+    if (!float_is_valid(value)) {
+      g_calibration_weight = value;
+      g_cal_set = true;
+    }
   }
 }
 
@@ -387,9 +437,6 @@ void setup() {
   // Initialize the I2C interface.
   Wire.begin();
 
-  // Connect to the wifi network.
-  setup_wifi();
-
   // Initialize the external display.
   setup_display();
 
@@ -399,13 +446,16 @@ void setup() {
   // Initialize the UNO R4's built-in display
   g_matrix.begin();
   g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
+
+  // Connect to the wifi network.
+  setup_wifi();
 }
 
 /// @function loop
 /// Called repeatedly
 void loop() {
 
-  float weight = -1.0;
+  float weight = (float)-1.0;
 
   // Turn the LED on.
   digitalWrite(LED, LOW);
@@ -416,13 +466,21 @@ void loop() {
   // Turn the LED off.
   digitalWrite(LED, LOW);
 
-  // Is a tare or calibration needed?
+  // Is a tare or calibration needed? If so, update the display.
   if (!g_tare_set) {
+
+    // Update the LCD screen.
     update_display("Tare needed!");
+
+    // Make the onboard LED panel display a sad face.
     g_matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
   }
   else if (!g_cal_set) {
+
+    // Update the LCD screen.
     update_display("Cal. needed!");
+
+    // Make the onboard LED panel display a sad face.
     g_matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
   }
 
@@ -431,67 +489,87 @@ void loop() {
 
     // Convert to weight.
     weight = compute_weight(raw_value);
+    if (weight >= 0.0) {
 
-    // Print.
-    char buff[64];
-    snprintf(buff, sizeof(buff) - 1, "%0.1f g", weight);
-    update_display_with_weight(buff);
+      // Update the LCD screen.
+      char buff[64];
+      snprintf(buff, sizeof(buff) - 1, "%0.1fg", weight);
+      update_display_with_weight(buff);
 
-    g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
+      // Make the onboard LED panel display a happy face.
+      g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
+    }
+    else {
 
-    Serial.print("[DATA] Weight = ");
-    Serial.println(weight, 1);
+      // Update the LCD screen.
+      update_display("Error!");
+
+      // Make the onboard LED panel display a sad face.
+      g_matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
+    }
   }
 
   // Print all the raw values.
   Serial.println("[DATA] Raw Values = " + String(raw_value) + ":" + String(g_raw_value_1) + ":" + String(g_raw_value_2) + ":" + String(g_raw_value_3) + ":" + String(g_raw_value_4) + ":" + String(weight));
 
-  // Update status.
-  char buff[800];
-  snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"refrigerator\", \"api_key\": \"%s\", \"hx711_1\": %u, \"hx711_2\": %u, \"hx711_3\": %u, \"hx711_4\": %u, \"hx711_sum\": %f}", API_KEY, g_raw_value_1, g_raw_value_2, g_raw_value_3, g_raw_value_4, raw_value);
-  Serial.println(buff);
-  post_status(buff);
-
   // Make sure all serial data has been sent before trying to read.
-  Serial.flush();
+  //Serial.flush();
 
   // Are we being sent a command?
-  uint8_t loop_count = 0;
-  while (Serial.available() > 0 && loop_count < 32) {
+  if (Serial.available() > 0) {
 
     // Read the command from the serial port.
     char received_char = Serial.read();
+    if (received_char == (char)-1) {
 
-    // Compute a new tare value.
-    if (received_char == 'T') {
+      // Update the LCD screen.
+      update_display("No cmd!");
+    }
+
+    // A request to compute a new tare value was received..
+    else if (received_char == 'T') {
+
+      // Update the LCD screen.
       update_display("Tareing...");
 
+      // Copy the raw value.
       g_tare_value = raw_value;
+      g_tare_set = true;
+
+      // Output it for debugging and for the client.
       Serial.print("[DATA] Tare Value = ");
       Serial.println(g_tare_value, 1);
-      g_tare_set = true;
     }
 
     // Compute a new weight value.
     else if (received_char == 'W') {
+
+      // Update the LCD screen.
       update_display("Calibrating...");
 
-      read_given_weight_value();
+      // Copy the raw value.
       g_calibration_value = raw_value;
 
+      // We should've been given the calibration weight.
+      read_given_weight_value();
+
+      // Output it for debugging and for the client.
       Serial.print("[DATA] Given Value = ");
       Serial.println(g_calibration_value, 1);
       Serial.print("[DATA] Given Weight (g) = ");
       Serial.println(g_calibration_weight, 1);
-      g_cal_set = true;
     }
 
     // Receive configuration values from the command and control computer.
     else if (received_char == 'C') {
+
+      // Update the LCD screen.
       update_display("Reading Config...");
 
+      // Read the values.
       read_config_values();
 
+      // Output it for debugging and for the client.
       Serial.print("[INFO] Tare Value = ");
       Serial.println(g_tare_value, 1);
       Serial.print("[INFO] Config Value = ");
@@ -502,9 +580,12 @@ void loop() {
       update_display("Config Read!");
     }
 
-    loop_count = loop_count + 1;
+    // Not sure what we just read.
+    else {
+      update_display("Invalid cmd!");
+    }
   }
 
   // Rate limit.
-  delay(1000);
+  delay(500);
 }
