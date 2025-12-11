@@ -107,7 +107,7 @@ void post_status(String str) {
   Serial.println("[INFO] Wifi connected!");
   WiFiSSLClient client;
 
-  // Connect to the relay client.
+  // Connect to the client.
   Serial.println("[INFO] Sending status...");
   if (client.connectSSL(STATUS_URL, STATUS_PORT)) {
     Serial.println("[INFO] Connected!");
@@ -172,6 +172,9 @@ void setup() {
 
   // Initialize serial and wait for port to open.
   Serial.begin(9600);
+  while (!Serial) {
+    delay(100);
+  }
   Serial.println("Initializing....");
 
   // Set the LED as output.
@@ -191,14 +194,17 @@ void loop() {
   digitalWrite(LED, HIGH);
 
   // Read wind speed.
+  Serial.println("[INFO] Reading wind speed...");
   float wind_speed_ms = read_anemometer();
 
   // Read temperature and humidity.
+  Serial.println("[INFO] Reading temperature and humidity...");
   float temp_c = 0.0;
   float humidity = 0.0;
   read_temperature_and_humidity_from_am2315c(&temp_c, &humidity);
 
   // Read soil moisture sensor.
+  Serial.println("[INFO] Reading soil moisture...");
   float moisture1 = read_soil_moisture_sensor_1();
   float moisture2 = read_soil_moisture_sensor_2();
 
@@ -213,5 +219,6 @@ void loop() {
   // Send.
   post_status(buff);
 
+  // Wait.
   delay(600000);
 }
