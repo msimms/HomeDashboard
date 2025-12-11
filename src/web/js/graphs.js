@@ -176,7 +176,7 @@ function draw_graph(data, settings, column_index = 0) {
     // Define scales.
     settings.min_loaded_x = d3.min(settings.data, d => d.x);
     settings.max_loaded_x = d3.max(settings.data, d => d.x);
-    var x_scale = d3.scaleLinear()
+    var x_scale = d3.scaleTime()
         .domain([settings.min_loaded_x, settings.max_loaded_x])
         .range([0, column_width]);
 
