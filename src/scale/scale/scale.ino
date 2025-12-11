@@ -166,6 +166,7 @@ void post_status(String str) {
   http.post("/api/1.0/update_status");
   http.sendHeader("Content-Type", "application/json");
   http.sendHeader("Content-Length", str.length());
+  http.sendHeader("Connection: close\r\n");
   http.beginBody();
   http.print(str);
   http.print("\r\n"); // end of headers
@@ -433,6 +434,9 @@ void setup() {
 
   // Set the serial IO rate.
   Serial.begin(9600);
+  while (!Serial) {
+    delay(100);
+  }
 
   // Initialize the I2C interface.
   Wire.begin();
@@ -586,6 +590,15 @@ void loop() {
     }
   }
 
-  // Rate limit.
-  delay(500);
+  // Format the output.
+  char buff[800];
+  snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"refrigerator\", \"api_key\": \"%s\", \"keg\": %f}", API_KEY, raw_value);
+  Serial.println(buff);
+
+  // Send.
+  post_status(buff);
+
+  // Wait a few seconds (so people can read the display) and then go into deep sleep.
+  delay(10000);
+  asm volatile("wfi");
 }
