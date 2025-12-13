@@ -30,6 +30,9 @@
         <h3>Indoor Temperature (C)</h3>
         <canvas id="indoor-temp-gauge"></canvas>
     </div>
+    <div>
+        <div id="keg-level"></div>
+    </div>
 </div>
 <!-- Gauges End -->
 
@@ -40,6 +43,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js" integrity="sha512-RJJ1NNC88QhN7dwpCY8rm/6OxI+YdQP48DrLGe/eSAd+n+s1PXwQkkpzzAgoJe4cZFW2GALQoxox61gSY2yQfg==" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/gaugeJS/dist/gauge.min.js"></script>
+<script src="${root_url}/js/js-fluid-meter.js"></script>
 <script src="${root_url}/js/common.js"></script>
 <script src="${root_url}/js/graphs.js"></script>
 <script>
@@ -54,6 +58,7 @@
     var g_co2_graph = null;
     var g_temp_graph = null;
     var g_humidity_graph = null;
+    var g_keg_level = null;
     var g_voc_graph = null;
     var g_voc_index_graph = null;
     var g_patio_temp_graph = null;
@@ -99,7 +104,7 @@
         };
 
         var target = document.getElementById(element_id);
-        var gauge  = new Gauge(target).setOptions(opts);
+        var gauge = new Gauge(target).setOptions(opts);
 
         // Configure the range.
         gauge.maxValue = 2000;
@@ -148,7 +153,7 @@
         };
 
         var target = document.getElementById(element_id);
-        var gauge  = new Gauge(target).setOptions(opts);
+        var gauge = new Gauge(target).setOptions(opts);
 
         // Configure the range.
         gauge.maxValue = 50;
@@ -157,7 +162,40 @@
 
         return gauge;
     }
-    
+
+    /// @function draw_fluid_graph
+    function draw_fluid_graph(element_id) {
+        var meter = new FluidMeter();
+        meter.init({
+            targetContainer: document.getElementById(element_id),
+            fillPercentage: 45,
+            options: {
+                fontSize: "24px",
+                drawPercentageSign: true,
+                drawBubbles: true,
+                size: 150,
+                borderWidth: 10,
+                backgroundColor: "#e2e2e2",
+                foregroundColor: "#fafafa",
+                foregroundFluidLayer: {
+                    fillStyle: "#16E1FF",
+                    angularSpeed: 30,
+                    maxAmplitude: 5,
+                    frequency: 30,
+                    horizontalSpeed: -20
+                },
+                backgroundFluidLayer: {
+                    fillStyle: "#4F8FC6",
+                    angularSpeed: 100,
+                    maxAmplitude: 3,
+                    frequency: 22,
+                    horizontalSpeed: 20
+                }
+            }
+        });
+        return meter;
+    }
+
     /// @function fetch_more_graph_data
     function fetch_more_graph_data(settings, min_x, max_x) {
         if (settings.element_id == "co2_chart" ||
@@ -355,13 +393,26 @@
             }
         });
     }
-    
+
+    /// @function get_refrigerator_status
+    function get_refrigerator_status(start_ts) {
+        let api_url = "${root_url}/api/1.0/refrigerator?start_ts=" + start_ts
+
+        send_get_request_async(api_url, function (response_code, response_text) {
+            if (response_code == 200) {
+                const records = JSON.parse(response_text);
+                var graphs = {};
+            }
+        });
+    }
+
     /// @function get_readings
     function get_readings() {
         var ts = Math.floor(g_readings_start_time.getTime() / 1000.0);
 
         get_indoor_air_quality_readings(ts);
         get_patio_monitor_readings(ts);
+        get_refrigerator_status(ts);
         get_website_status(ts);
 
         // Set the timer so we can get another refresh.
@@ -375,6 +426,8 @@
         g_co2_gauge.set(0);
         g_indoor_temp_gauge = draw_temperature_gauge("indoor-temp-gauge");
         g_indoor_temp_gauge.set(0);
+        g_keg_level = draw_fluid_graph("keg-level");
+        g_keg_level.setPercentage(50);
     }
 
     draw_gauges();
