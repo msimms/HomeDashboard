@@ -21,10 +21,14 @@
 <body>
 
 <!-- Gauges Start -->
-<div id="gauges" class="block">
+<div id="gauges" class="block gauge-container">
     <div>
-        <h3>Indoor CO<sup>2</sup></h3>
+        <h3>Indoor CO<sup>2</sup> (PPM)</h3>
         <canvas id="indoor-co2-gauge"></canvas>
+    </div>
+    <div>
+        <h3>Indoor Temperature (C)</h3>
+        <canvas id="indoor-temp-gauge"></canvas>
     </div>
 </div>
 <!-- Gauges End -->
@@ -105,6 +109,55 @@
         return gauge;
     }
 
+    /// @function draw_temperature_gauge
+    /// Creates a draw_temperature_gauge gauge.
+    function draw_temperature_gauge(element_id) {
+        // Gauge options
+        var opts = {
+            angle: 0.15, // Span of the gauge arc (0 = full circle, 0.15 ~ half circle)
+            lineWidth: 0.25, // Relative thickness
+            radiusScale: 1.0,
+
+            pointer: {
+                length: 0.7, // Relative to gauge radius
+                strokeWidth: 0.04,
+                color: "#aaaaaa"
+            },
+
+            // Background zones for the arc
+            staticZones: [
+                { strokeStyle: "#2b2dfb", min: -10, max: 10 }, // Blue
+                { strokeStyle: "#30B32D", min: 10,  max: 25 }, // Green
+                { strokeStyle: "#FFDD00", min: 25,  max: 30 }, // Yellow
+                { strokeStyle: "#F03E3E", min: 30,  max: 50 }  // Red
+            ],
+
+            // Value labels around the arc
+            staticLabels: {
+                font: "12px sans-serif",
+                labels: [-10, 0,10, 20, 30, 40, 50],
+                color: "#aaaaaa",
+                fractionDigits: 0
+            },
+
+            // Style of the remaining (unused) arc
+            strokeColor: "#E0E0E0",
+            limitMax: true,
+            limitMin: true,
+            highDpiSupport: true
+        };
+
+        var target = document.getElementById(element_id);
+        var gauge  = new Gauge(target).setOptions(opts);
+
+        // Configure the range.
+        gauge.maxValue = 50;
+        gauge.setMinValue(-10);
+        gauge.animationSpeed = 32;
+
+        return gauge;
+    }
+    
     /// @function fetch_more_graph_data
     function fetch_more_graph_data(settings, min_x, max_x) {
         if (settings.element_id == "co2_chart" ||
@@ -179,6 +232,7 @@
                     else {
                         g_temp_graph.update_func(temp_readings);
                     }
+                    g_indoor_temp_gauge.set(temp_readings.at(-1).y);
                 }
                 if (humidity_readings.length > 0) {
                     if (g_humidity_graph == null) {
@@ -319,6 +373,8 @@
     function draw_gauges() {
         g_co2_gauge = draw_co2_gauge("indoor-co2-gauge");
         g_co2_gauge.set(0);
+        g_indoor_temp_gauge = draw_temperature_gauge("indoor-temp-gauge");
+        g_indoor_temp_gauge.set(0);
     }
 
     draw_gauges();
