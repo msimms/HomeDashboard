@@ -71,7 +71,8 @@ function draw_graph(data, settings, column_index = 0) {
     let svg_width = column_width;
     let svg_height = height + margin.top + margin.bottom;
 
-    settings.data = data;
+    // Scale the data to milliseconds.
+    settings.data = data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
 
     let tooltip = d3.select("#charts")
         .append("div")
@@ -350,6 +351,9 @@ function draw_graph(data, settings, column_index = 0) {
 
     // Function to update chart.
     function update(new_data) {
+
+        // Scale the data to milliseconds.
+        new_data = new_data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
 
         // Concatenate. Need to do this so that tooltips work.
         settings.data = settings.data.concat(new_data);
