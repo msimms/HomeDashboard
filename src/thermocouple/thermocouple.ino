@@ -83,7 +83,7 @@ void post_status(String str) {
 
   // Network is connected....
   Serial.println("[INFO] Wifi connected!");
-  WiFiSSLClient ssl; // TLS socket
+  /*WiFiSSLClient ssl; // TLS socket
 
   HttpClient http(ssl, STATUS_URL, STATUS_PORT);
   http.beginRequest();
@@ -100,7 +100,7 @@ void post_status(String str) {
   Serial.print("[INFO] Status: "); Serial.println(status);
   Serial.println(body);
 
-  WiFi.end();
+  WiFi.end();*/
 }
 
 void setup() {
@@ -111,11 +111,23 @@ void setup() {
 
 void loop() {
   double c = tc.readCelsius();   // ~220 ms conversion latency internally
+
+  // Sanity check.
   if (isnan(c)) {
     Serial.println("Thermocouple missing/open!");
   } else {
+
+    // For serial debugging.
     double f = c * 9.0 / 5.0 + 32.0;
     Serial.printf("Temp: %.2f °C (%.2f °F)\n", c, f);
+
+    // Format the output.
+    char buff[800];
+    snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"indoor_air\", \"api_key\": \"%s\", \"ac_outlet_temp\": %f}", API_KEY, c);
+    Serial.println(buff);
+
+    // Send.
+    //post_status(buff);
   }
-  delay(500); // ~2 Hz updates (safe for MAX6675)
+  delay(10000);
 }
