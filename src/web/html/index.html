@@ -27,7 +27,7 @@
         <canvas id="indoor-co2-gauge"></canvas>
     </div>
     <div>
-        <h3>Indoor Temperature (C)</h3>
+        <h3>Indoor Temperature (&deg;C)</h3>
         <canvas id="indoor-temp-gauge"></canvas>
     </div>
     <div>
@@ -61,6 +61,7 @@
     var g_keg_level = null;
     var g_voc_graph = null;
     var g_voc_index_graph = null;
+    var g_ac_outlet_temp_graph = null;
     var g_patio_temp_graph = null;
     var g_patio_humidity_graph = null;
     var g_patio_moisture1_graph = null;
@@ -174,7 +175,7 @@
                 drawPercentageSign: true,
                 drawBubbles: true,
                 size: 150,
-                borderWidth: 10,
+                borderWidth: 1,
                 backgroundColor: "#e2e2e2",
                 foregroundColor: "#fafafa",
                 foregroundFluidLayer: {
@@ -212,6 +213,10 @@
             settings.element_id == "moisture_sensor_2") {
             get_patio_monitor_readings(min_x / 1000.0);
         }
+        else if (
+            settings.element_id == "ac_outlet_temp") {
+            get_ac_readings(min_x / 1000.0);
+        }
     }
 
     /// @function create_graph_settings
@@ -244,17 +249,21 @@
 
                 for (let record of records) {
                     let ts = record['ts'];
-                    co2_readings.push( { x: ts, y: record['co2_ppm'] });
-                    temp_readings.push( { x: ts, y: record['temp_c'] });
-                    humidity_readings.push( { x: ts, y: record['humidity'] });
-                    voc_readings.push( { x: ts, y: record['voc'] });
-                    voc_index_readings.push( { x: ts, y: record['voc_index'] });
+                    if (record['co2_ppm'] != null)
+                        co2_readings.push( { x: ts, y: record['co2_ppm'] });
+                    if (record['temp_c'] != null)
+                        temp_readings.push( { x: ts, y: record['temp_c'] });
+                    if (record['humidity'] != null)
+                        humidity_readings.push( { x: ts, y: record['humidity'] });
+                    if (record['voc'] != null)
+                        voc_readings.push( { x: ts, y: record['voc'] });
+                    if (record['voc_index'] != null)
+                        voc_index_readings.push( { x: ts, y: record['voc_index'] });
                 }
 
                 if (co2_readings.length > 0) {
                     if (g_co2_graph == null) {
                         g_co2_graph = create_graph_settings("co2_chart", "Indoor CO2", "PPM", "yellow", CHART_HEIGHT);
-                        //g_co2_graph.y_axis_labels = [0, 400, 800, 1200, 1600];
                         draw_graph(co2_readings, g_co2_graph);
                     }
                     else {
@@ -361,6 +370,36 @@
         });
     }
 
+    /// @function get_ac_readings
+    function get_ac_readings(start_ts) {
+        let api_url = "${root_url}/api/1.0/ac?start_ts=" + start_ts
+
+        send_get_request_async(api_url, function (response_code, response_text) {
+            if (response_code == 200) {
+                const CHART_HEIGHT = 250;
+                const records = JSON.parse(response_text);
+
+                var ac_outlet_temp_readings = [];
+
+                for (let record of records) {
+                    let ts = record['ts'];
+                    if (record['ac_outlet_temp'] != null)
+                        ac_outlet_temp_readings.push( { x: ts, y: record['ac_outlet_temp'] });
+                }
+
+                if (ac_outlet_temp_readings.length > 0) {
+                    if (g_ac_outlet_temp_graph == null) {
+                        g_ac_outlet_temp_graph = create_graph_settings("ac_outlet_temp", "AC Outlet Temp", "", "red", CHART_HEIGHT);
+                        draw_graph(ac_outlet_temp_readings, g_ac_outlet_temp_graph);
+                    }
+                    else {
+                        g_ac_outlet_temp_graph.update_func(ac_outlet_temp_readings);
+                    }
+                }
+            }
+        });
+    }
+
     /// @function get_website_status
     function get_website_status(start_ts) {
         let api_url = "${root_url}/api/1.0/website_status?start_ts=" + start_ts
@@ -394,8 +433,8 @@
         });
     }
 
-    /// @function get_refrigerator_status
-    function get_refrigerator_status(start_ts) {
+    /// @function get_refrigerator_readings
+    function get_refrigerator_readings(start_ts) {
         let api_url = "${root_url}/api/1.0/refrigerator?start_ts=" + start_ts
 
         send_get_request_async(api_url, function (response_code, response_text) {
@@ -412,7 +451,8 @@
 
         get_indoor_air_quality_readings(ts);
         get_patio_monitor_readings(ts);
-        get_refrigerator_status(ts);
+        get_refrigerator_readings(ts);
+        get_ac_readings(ts);
         get_website_status(ts);
 
         // Set the timer so we can get another refresh.

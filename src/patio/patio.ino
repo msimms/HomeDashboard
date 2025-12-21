@@ -10,7 +10,7 @@
 #define ADC_RESOLUTION 4095
 
 // Anemometer (https://www.adafruit.com/product/1733)
-#define MIN_ANEMOMETER_VOLTAGE 0.4
+#define MIN_ANEMOMETER_VOLTAGE 0.10 // based on experimentation
 #define MAX_ANEMOMETER_VOLTAGE 2.0
 #define MIN_WIND_SPEED 0.2  // meters per sec
 #define MAX_WIND_SPEED 32.4 // meters per sec
@@ -40,7 +40,7 @@ float read_anemometer() {
   float voltage = (sensor_value * REF_VOLTAGE) / ADC_RESOLUTION;
   float wind_speed_ms = 0.0;
 
-  if (voltage >= MIN_ANEMOMETER_VOLTAGE) {
+  if (voltage > MIN_ANEMOMETER_VOLTAGE) {
     wind_speed_ms = mapfloat(voltage, MIN_ANEMOMETER_VOLTAGE, MAX_ANEMOMETER_VOLTAGE, MIN_WIND_SPEED, MAX_WIND_SPEED);
   }
   return wind_speed_ms;
@@ -151,7 +151,7 @@ void post_status(String str) {
 /// @function setup_anemometer
 void setup_anemometer() {
   Serial.println("[INFO] Setting up the anemometer...");
-  pinMode(A0, INPUT_PULLUP); // Enable internal pull-up resistor on pin A0
+  pinMode(A0, INPUT_PULLDOWN); // Enable internal pull-up resistor on pin A0
   Serial.println("[INFO] Done setting up the anemometer...");
 }
 
@@ -220,5 +220,5 @@ void loop() {
   post_status(buff);
 
   // Wait.
-  delay(600000);
+  delay(60000);
 }

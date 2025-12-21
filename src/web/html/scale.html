@@ -1,0 +1,105 @@
+<!-- Created by Michael Simms -->
+<!-- Copyright (c) 2025 Michael Simms -->
+
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+
+<title>Dashboard - Scale</title>
+
+<link rel="stylesheet" type="text/css" href="${root_url}/css/normalize.css">
+<link rel="stylesheet" type="text/css" href="${root_url}/css/site.css">
+<link rel="shortcut icon" href="${root_url}/media/favicon.ico">
+
+<meta charset="UTF-8">
+
+</head>
+
+<body>
+
+<script src="${root_url}/js/common.js"></script>
+<script src="${root_url}/js/cookies.js"></script>
+<script>
+
+    /// @function tare
+    function tare() {
+        let api_url = "${root_url}/api/1.0/tare_scale"
+
+        send_post_request_async(api_url, {}, function (response_code, response_text) {
+            if (response_code == 200) {
+            }
+        });
+    }
+
+    /// @function calibrate
+    function calibrate() {
+        let api_url = "${root_url}/api/1.0/calibrate_scale"
+
+        send_post_request_async(api_url, {}, function (response_code, response_text) {
+            if (response_code == 200) {
+            }
+        });
+    }
+
+    // Handler for when we receive the list of scale calibrations from the server.
+    var process_scale_calibration_list = function(records) {
+        let cal_table = document.getElementById("scale_calibration_table");
+
+        if (records.length > 0) {
+            let new_row = cal_table.insertRow();
+            let cell = new_row.insertCell();
+
+            cell.appendChild(document.createTextNode("Scale"));
+            cell = new_row.insertCell();
+            cell.appendChild(document.createTextNode("Tare Value"));
+            cell = new_row.insertCell();
+            cell.appendChild(document.createTextNode("Calibration Value"));
+
+            for (let key_record of records) {
+                let new_row = cal_table.insertRow();
+                let cell = new_row.insertCell();
+
+                cell.appendChild(document.createTextNode(name));
+                cell = new_row.insertCell();
+                cell.appendChild(document.createTextNode(tare));
+                cell = new_row.insertCell();
+                cell.appendChild(document.createTextNode(value));
+            }
+        }
+        else {
+            cal_table.appendChild(document.createTextNode("No scale calibrations"));
+        }
+    }
+
+    /// @function load_scale_cal
+    function load_scale_cal() {
+        let api_url = "${root_url}/api/1.0/scale_calibration"
+
+        send_get_request_async(api_url, function (response_code, response_text) {
+            if (response_code == 200) {
+                if (response_text.length > 0) {
+                    let obj_list = JSON.parse(response_text);
+                    process_scale_calibration_list(obj_list);
+                }
+            }
+        });
+    }
+
+    load_scale_cal();
+
+</script>
+
+<div id="scale_calibration_list" class="block">
+    <table id="scale_calibration_table">
+    </table>
+
+    <div>
+        <button type="button" id="tare" onclick="javascript:tare()" title="Tares the scale">Tare</button>
+        <button type="button" id="calibrate" onclick="javascript:calibrate()" title="Calibrates the scale">Calibrate</button>
+    </div>
+</div>
+
+</body>
+
+</html>

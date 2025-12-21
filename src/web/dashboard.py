@@ -332,6 +332,18 @@ def admin():
         log_error("Unhandled Exception")
     return ""
 
+@g_flask_app.route('/scale')
+@login_required
+def scale():
+    """Renders the scale configuration page."""
+    try:
+        html_file = os.path.join(g_root_dir, HTML_DIR, 'scale.html')
+        my_template = Template(filename=html_file, module_directory=g_tempmod_dir)
+        return my_template.render(root_url=g_root_url)
+    except:
+        log_error("Unhandled Exception")
+    return ""
+    
 @g_flask_app.route('/')
 def index():
     """Renders the index page."""
@@ -364,12 +376,19 @@ def handle_api_patio_request(values):
     return True, result
 
 def handle_api_refrigerator_request(values):
-    """Called when an API request for the keg status is received."""
+    """Called when an API request for the refrigerator status is received."""
     start_ts = 0
     if START_TS in values:
         start_ts = int(float(values[START_TS]))
     db = connect_to_db()
     readings = list(db.retrieve_refrigerator_status(start_ts))
+    result = json.dumps(readings)
+    return True, result
+
+def handle_scale_calibration_request(values):
+    """Called when an API request for the scale calibration data is received."""
+    db = connect_to_db()
+    readings = list(db.retrieve_scale_calibration())
     result = json.dumps(readings)
     return True, result
 
@@ -512,6 +531,18 @@ def handle_api_update_status(values):
 
     return True, ""
 
+def handle_api_tare_scale(values):
+    # Connect to the database.
+    db = connect_to_db()
+
+    pass
+
+def handle_api_calibrate_scale(values):
+    # Connect to the database.
+    db = connect_to_db()
+
+    pass
+
 def handle_api_create_api_key(values):
     """Called when an API request to create an API key is received."""
     # Validate the session cookie.
@@ -552,6 +583,8 @@ def handle_api_1_0_get_request(request, values):
         return handle_api_patio_request(values)
     if request == 'refrigerator':
         return handle_api_refrigerator_request(values)
+    if request == 'scale_calibration':
+        return handle_scale_calibration_request(values)
     if request == 'website_status':
         return handle_api_website_status(values)
     if request == 'list_api_keys':
@@ -568,6 +601,10 @@ def handle_api_1_0_post_request(request, values):
         return handle_api_logout(values)
     if request == 'update_status':
         return handle_api_update_status(values)
+    if request == 'tare_scale':
+        return handle_api_tare_scale(values)
+    if request == 'calibrate_scale':
+        return handle_api_calibrate_scale(values)
     if request == 'create_api_key':
         return handle_api_create_api_key(values)
     return False, ""

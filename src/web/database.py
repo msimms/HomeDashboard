@@ -42,6 +42,11 @@ SESSION_COOKIE_KEY = "cookie"
 SESSION_USER_KEY = "user"
 SESSION_EXPIRY_KEY = "expiry"
 
+# Keys associated with scale calibration.
+SCALE_NAME_KEY = "name"
+SCALE_TARE_VALUE_KEY = "tare_value"
+SCALE_CALIBRATION_VALUE_KEY = "calibration_value"
+
 # Collection names.
 COLLECTION_INDOOR_AIR_QUALITY = "indoor_air_quality"
 COLLECTION_PATIO_MONITOR = "patio_monitor"
@@ -163,6 +168,7 @@ class AppMongoDatabase(Database):
             # Handles to the various collections.
             self.users_collection = self.database['users']
             self.sessions_collection = self.database['sessions']
+            self.scale_calibrations_collection = self.database['scale_calibrations']
             self.api_keys_collection = self.database['api_keys']
             self.indoor_air_quality = self.database[COLLECTION_INDOOR_AIR_QUALITY]
             self.patio_monitor = self.database[COLLECTION_PATIO_MONITOR]
@@ -478,6 +484,44 @@ class AppMongoDatabase(Database):
             if min_ts > 0:
                 filter = {"ts": {"$gt": min_ts}}
             return self.refrigerator.find(filter, {"_id": 0})
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return []
+
+    #
+    # Scale calibration methods
+    #
+
+    def create_scale_calibration(self, name, tare_value, cal_value):
+        """Create method for scale calibrations."""
+        try:
+            post = { SCALE_NAME_KEY: name, SCALE_TARE_VALUE_KEY: tare_value, SCALE_CALIBRATION_VALUE_KEY: cal_value }
+            return insert_into_collection(self.scale_calibrations_collection, post)
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return False
+
+    def update_scale_calibration(self, name, tare_value, cal_value):
+        """Update method for scale calibrations."""
+        try:
+            cal = self.scale_calibrations_collection.find_one({ SCALE_NAME_KEY: name }, {"_id": 0})
+            if cal is not None:
+                if tare_value is not None:
+                    cal[SCALE_TARE_VALUE_KEY] = tare_value
+                if cal_value is not None:
+                    cal[SCALE_CALIBRATION_VALUE_KEY] = cal_value
+                return update_collection(self.scale_calibrations_collection, cal)
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return False
+
+    def retrieve_scale_calibration(self):
+        """Retrieve method for scale calibrations."""
+        try:
+            return self.scale_calibrations_collection.find_one({ USERNAME_KEY: username }, {"_id": 0})
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])

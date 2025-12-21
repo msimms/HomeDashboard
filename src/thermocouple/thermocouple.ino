@@ -51,10 +51,38 @@ const int PIN_SCK = 14; // GPIO14 (D5)
 
 MAX6675 tc(PIN_SCK, PIN_CS, PIN_SO);
 
+BearSSL::CertStore g_certStore;
+
+/// @function load_certs
+void load_certs() {
+  WiFi.begin(SECRET_SSID, SECRET_PASS);
+  while (WiFi.status()!=WL_CONNECTED) {
+    delay(200);
+  }
+
+  // Time is required for CA validation
+  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+  time_t now = time(nullptr);
+  while (now < 8*3600*2) {
+    delay(500);
+    now = time(nullptr);
+  }
+
+  // Mount FS and load cert bundle files
+  if (!LittleFS.begin()) {
+    Serial.println("LittleFS mount failed");
+    return;
+  }
+
+  // loads certs.idx / certs.ar from LittleFS
+  int num_certs = g_certStore.initCertStore(LittleFS, "/certs.idx", "/certs.ar");
+  Serial.printf("Certs loaded: %d\n", num_certs);
+}
+
 /// @function post_status
 void post_status(String str) {
 
-  // Attempt to connect to Wi-Fi network:
+  // Attempt to connect to Wi-Fi network.
   Serial.println("[INFO] Connecting to WiFi...");
   WiFi.mode(WIFI_STA);
   WiFi.begin(SECRET_SSID, SECRET_PASS);
@@ -70,7 +98,7 @@ void post_status(String str) {
   // Network is connected....
   Serial.println("[INFO] Wifi connected!");
 
-  // Attempt to connect to Wi-Fi network:
+  // Attempt to connect to Wi-Fi network.
   Serial.println("[INFO] Connecting to WiFi...");
   if (WiFi.status() != WL_CONNECTED) {
     Serial.print("[INFO] Attempting to connect to the network: ");
@@ -83,24 +111,21 @@ void post_status(String str) {
 
   // Network is connected....
   Serial.println("[INFO] Wifi connected!");
-  /*WiFiSSLClient ssl; // TLS socket
 
-  HttpClient http(ssl, STATUS_URL, STATUS_PORT);
-  http.beginRequest();
-  http.post("/api/1.0/update_status");
-  http.sendHeader("Content-Type", "application/json");
-  http.sendHeader("Content-Length", str.length());
-  http.beginBody();
-  http.print(str);
-  http.print("\r\n"); // end of headers
-  http.endRequest();
-
-  int status = http.responseStatusCode();
-  String body = http.responseBody();
-  Serial.print("[INFO] Status: "); Serial.println(status);
-  Serial.println(body);
-
-  WiFi.end();*/
+  // Load the certificates.
+  std::unique_ptr<BearSSL::WiFiClientSecure> client(new BearSSL::WiFiClientSecure);
+  client->setCertStore(&g_certStore);
+  client->setX509Time(time(nullptr));
+ 
+  // Send.
+  HTTPClient https;
+  char buff[128];
+  snprintf(buff, sizeof(buff) - 1, "https://%s/api/1.0/update_status", STATUS_URL);
+  if (https.begin(*client, buff)) {
+    https.addHeader("Content-Type", "application/json");
+    int code = https.POST(str);
+    https.end();
+  }
 }
 
 void setup() {
@@ -122,8 +147,8 @@ void loop() {
     Serial.printf("Temp: %.2f °C (%.2f °F)\n", c, f);
 
     // Format the output.
-    char buff[800];
-    snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"indoor_air\", \"api_key\": \"%s\", \"ac_outlet_temp\": %f}", API_KEY, c);
+    char buff[600];
+    snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"ac\", \"api_key\": \"%s\", \"ac_outlet_temp\": %f}", API_KEY, c);
     Serial.println(buff);
 
     // Send.
