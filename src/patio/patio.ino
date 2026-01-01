@@ -46,11 +46,11 @@ float read_anemometer() {
   return wind_speed_ms;
 }
 
-/// @function read_temperature_and_humidity_from_am2315
+/// @function read_temperature_and_humidity_from_am2315c
 void read_temperature_and_humidity_from_am2315c(float* temp_c, float* humidity) {
   int status = DHT.read();
-  *temp_c = DHT.getTemperature();
-  *humidity = DHT.getHumidity();
+  (*temp_c) = DHT.getTemperature();
+  (*humidity) = DHT.getHumidity();
 }
 
 /// @function read_soil_moisture_sensor
@@ -151,16 +151,36 @@ void post_status(String str) {
 /// @function setup_anemometer
 void setup_anemometer() {
   Serial.println("[INFO] Setting up the anemometer...");
-  pinMode(A0, INPUT_PULLDOWN); // Enable internal pull-up resistor on pin A0
+  pinMode(A0, INPUT_PULLDOWN); // Enable internal pull-down resistor on pin A0
   Serial.println("[INFO] Done setting up the anemometer...");
 }
 
-/// @function setup_am2315
-void setup_am2315() {
+/// @function i2c_reinit
+void i2c_reinit() {
+  Wire.end();
+  delay(5);
+  Wire.begin();
+#if defined(WIRE_HAS_TIMEOUT)
+  Wire.setWireTimeout(2500, true); // prevents permanent hangs
+#endif
+  delay(1000);
+}
+
+/// @function setup_am2315c
+void setup_am2315c() {
   Serial.println("[INFO] Setting up the AM2315...");
 
   Wire.begin();
-  DHT.begin();
+#if defined(WIRE_HAS_TIMEOUT)
+  Wire.setWireTimeout(2500, true);
+#endif
+
+  //pinMode(A4, INPUT_PULLUP);
+  //pinMode(A5, INPUT_PULLUP);
+
+  if (!DHT.begin()) {
+    Serial.println("[ERROR] Sensor not found. Check wiring!");
+  }
 
   delay(1000);
 
@@ -175,7 +195,7 @@ void setup() {
   while (!Serial) {
     delay(100);
   }
-  Serial.println("Initializing....");
+  Serial.println("[INFO] Initializing....");
 
   // Set the LED as output.
   pinMode(LED_BUILTIN, OUTPUT);
@@ -183,12 +203,15 @@ void setup() {
   // Initialize the anemometer.
   setup_anemometer();
 
-  // Initialize the AM2315.
-  setup_am2315();
+  // Initialize the AM2315C.
+  setup_am2315c();
 }
 
 /// @function loop
 void loop() {
+
+  // Re-init I2C on wake from sleep.
+  //i2c_reinit();
 
   // Turn the LED on.
   digitalWrite(LED, HIGH);
@@ -220,5 +243,5 @@ void loop() {
   post_status(buff);
 
   // Wait.
-  delay(60000);
+  delay(600000);
 }
