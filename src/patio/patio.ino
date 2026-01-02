@@ -49,8 +49,19 @@ float read_anemometer() {
 /// @function read_temperature_and_humidity_from_am2315c
 void read_temperature_and_humidity_from_am2315c(float* temp_c, float* humidity) {
   int status = DHT.read();
-  (*temp_c) = DHT.getTemperature();
-  (*humidity) = DHT.getHumidity();
+  if (status == 0) {
+    (*temp_c) = DHT.getTemperature();
+    (*humidity) = DHT.getHumidity();
+  }
+  else {
+    Serial.print("[ERROR] DHT.read() returned ");
+    Serial.println(status);
+
+    Wire.end();
+    delay(5);
+    Wire.begin();
+    Wire.setTimeout(2500);
+  }
 }
 
 /// @function read_soil_moisture_sensor
@@ -160,9 +171,7 @@ void i2c_reinit() {
   Wire.end();
   delay(5);
   Wire.begin();
-#if defined(WIRE_HAS_TIMEOUT)
-  Wire.setWireTimeout(2500, true); // prevents permanent hangs
-#endif
+  Wire.setTimeout(2500); // prevents permanent hangs
   delay(1000);
 }
 
