@@ -46,11 +46,12 @@ SESSION_EXPIRY_KEY = "expiry"
 SCALE_NAME_KEY = "name"
 SCALE_TARE_VALUE_KEY = "tare_value"
 SCALE_CALIBRATION_VALUE_KEY = "calibration_value"
+SCALE_CALIBRATION_WEIGHT_KEY = "calibration_weight"
 
 # Collection names.
 COLLECTION_INDOOR_AIR_QUALITY = "indoor_air_quality"
 COLLECTION_PATIO_MONITOR = "patio_monitor"
-COLLECTION_REFRIGERATOR = "refrigerator"
+COLLECTION_KEG = "keg"
 COLLECTION_WEBSITE_STATUS = "website_status"
 
 # Keys associated with API key management.
@@ -172,7 +173,7 @@ class AppMongoDatabase(Database):
             self.api_keys_collection = self.database['api_keys']
             self.indoor_air_quality = self.database[COLLECTION_INDOOR_AIR_QUALITY]
             self.patio_monitor = self.database[COLLECTION_PATIO_MONITOR]
-            self.refrigerator = self.database[COLLECTION_REFRIGERATOR]
+            self.keg = self.database[COLLECTION_KEG]
             self.website_status = self.database[COLLECTION_WEBSITE_STATUS]
         except pymongo.errors.ConnectionFailure as e:
             raise DatabaseException("Could not connect to MongoDB: %s" % e)
@@ -431,8 +432,8 @@ class AppMongoDatabase(Database):
         try:
             if collection_name == COLLECTION_PATIO_MONITOR:
                 return insert_into_collection(self.patio_monitor, values)
-            if collection_name == COLLECTION_REFRIGERATOR:
-                return insert_into_collection(self.refrigerator, values)
+            if collection_name == COLLECTION_KEG:
+                return insert_into_collection(self.keg, values)
             if collection_name == COLLECTION_WEBSITE_STATUS:
                 return insert_into_collection(self.website_status, values)
             raise Exception("Unknown collection")
@@ -474,16 +475,16 @@ class AppMongoDatabase(Database):
         return []
 
     #
-    # Refrigerator monitor methods
+    # Keg monitor methods
     #
 
-    def retrieve_refrigerator_status(self, min_ts):
-        """Retrieve method for refrigerator measurements (temp, amount left in the keg, etc)."""
+    def retrieve_keg_status(self, min_ts):
+        """Retrieve method for keg measurements (temp, amount left in the keg, etc)."""
         try:
             filter = {}
             if min_ts > 0:
                 filter = {"ts": {"$gt": min_ts}}
-            return self.refrigerator.find(filter, {"_id": 0})
+            return self.keg.find(filter, {"_id": 0})
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
@@ -493,7 +494,7 @@ class AppMongoDatabase(Database):
     # Scale calibration methods
     #
 
-    def create_scale_calibration(self, name, tare_value, cal_value):
+    def create_scale_calibration(self, name, tare_value, cal_value, cal_weight):
         """Create method for scale calibrations."""
         try:
             post = { SCALE_NAME_KEY: name, SCALE_TARE_VALUE_KEY: tare_value, SCALE_CALIBRATION_VALUE_KEY: cal_value }
@@ -503,29 +504,30 @@ class AppMongoDatabase(Database):
             self.log_error(sys.exc_info()[0])
         return False
 
-    def update_scale_calibration(self, name, tare_value, cal_value):
+    def update_scale_calibration(self, name, tare_value, cal_value, cal_weight):
         """Update method for scale calibrations."""
         try:
             cal = self.scale_calibrations_collection.find_one({ SCALE_NAME_KEY: name }, {"_id": 0})
             if cal is not None:
                 if tare_value is not None:
                     cal[SCALE_TARE_VALUE_KEY] = tare_value
-                if cal_value is not None:
+                if cal_value is not None and cal_weight is not None:
                     cal[SCALE_CALIBRATION_VALUE_KEY] = cal_value
+                    cal[SCALE_CALIBRATION_WEIGHT_KEY] = cal_weight
                 return update_collection(self.scale_calibrations_collection, cal)
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
         return False
 
-    def retrieve_scale_calibration(self):
+    def retrieve_scale_calibration(self, name):
         """Retrieve method for scale calibrations."""
         try:
-            return self.scale_calibrations_collection.find_one({ USERNAME_KEY: username }, {"_id": 0})
+            return self.scale_calibrations_collection.find_one({ SCALE_NAME_KEY: name }, {"_id": 0})
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
-        return []
+        return {}
 
     #
     # Website status methods

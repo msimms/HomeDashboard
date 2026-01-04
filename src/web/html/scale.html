@@ -28,6 +28,10 @@
 
         send_post_request_async(api_url, {}, function (response_code, response_text) {
             if (response_code == 200) {
+                window.location.replace("${root_url}/scale");
+            }
+            else {
+                alert("Tare failed!");
             }
         });
     }
@@ -38,6 +42,10 @@
 
         send_post_request_async(api_url, {}, function (response_code, response_text) {
             if (response_code == 200) {
+                window.location.replace("${root_url}/scale");
+            }
+            else {
+                alert("Calibration failed!");
             }
         });
     }
@@ -82,6 +90,12 @@
                     let obj_list = JSON.parse(response_text);
                     process_scale_calibration_list(obj_list);
                 }
+                else {
+                    alert("Scale calibration not received!");
+                }
+            }
+            else {
+                alert("Failed to load the scale calibration!");
             }
         });
     }

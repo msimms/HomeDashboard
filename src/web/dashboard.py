@@ -375,13 +375,13 @@ def handle_api_patio_request(values):
     result = json.dumps(readings)
     return True, result
 
-def handle_api_refrigerator_request(values):
-    """Called when an API request for the refrigerator status is received."""
+def handle_api_keg_request(values):
+    """Called when an API request for the keg status is received."""
     start_ts = 0
     if START_TS in values:
         start_ts = int(float(values[START_TS]))
     db = connect_to_db()
-    readings = list(db.retrieve_refrigerator_status(start_ts))
+    readings = list(db.retrieve_keg_status(start_ts))
     result = json.dumps(readings)
     return True, result
 
@@ -532,16 +532,56 @@ def handle_api_update_status(values):
     return True, ""
 
 def handle_api_tare_scale(values):
+    """Called when an API request to tare a scale is received."""
+    # Validate the session cookie.
+    _, _ = common_auth_check(values)
+
     # Connect to the database.
     db = connect_to_db()
 
-    pass
+    # Find the latest scale reading. If it is recent then we'll use that as the tare value.
+    ten_minutes_ago = time.time() - 600.0
+    recent_scale_readings = list(db.retrieve_keg_status(ten_minutes_ago))
+    if len(recent_scale_readings) == 0:
+        raise ApiMalformedRequestException("No scale readings within the last ten minutes.")
+    tare_value = recent_scale_readings[-1]["raw_value"]
+
+    # Find the latest calibration record.
+    cal_rec = self.db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
+
+    # Update the calibration record.
+    if bool(cal_rec):
+        self.db.create_scale_calibration(cal_rec[database.SCALE_NAME_KEY], tare_value, cal_rec[database.SCALE_CALIBRATION_VALUE_KEY], cal_rec[database.SCALE_CALIBRATION_WEIGHT_KEY])
+    else:
+        self.db.update_scale_calibration(cal_rec[database.SCALE_NAME_KEY], tare_value, cal_rec[database.SCALE_CALIBRATION_VALUE_KEY], cal_rec[database.SCALE_CALIBRATION_WEIGHT_KEY])
+
+    return True, ""
 
 def handle_api_calibrate_scale(values):
+    """Called when an API request to calibrate a scale is received."""
+    # Validate the session cookie.
+    _, _ = common_auth_check(values)
+
     # Connect to the database.
     db = connect_to_db()
 
-    pass
+    # Find the latest scale reading. If it is recent then we'll use that as the calibration value.
+    ten_minutes_ago = time.time() - 600.0
+    recent_scale_readings = list(db.retrieve_keg_status(ten_minutes_ago))
+    if len(recent_scale_readings) == 0:
+        raise ApiMalformedRequestException("No scale readings within the last ten minutes.")
+    cal_value = recent_scale_readings[-1]["raw_value"]
+
+    # Find the latest calibration record.
+    cal_rec = self.db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
+
+    # Update the calibration record.
+    if bool(cal_rec):
+        self.db.create_scale_calibration(cal_rec[database.SCALE_NAME_KEY], cal_rec[database.SCALE_TARE_VALUE_KEY], cal_value, values[database.SCALE_CALIBRATION_WEIGHT_KEY])
+    else:
+        self.db.update_scale_calibration(cal_rec[database.SCALE_NAME_KEY], cal_rec[database.SCALE_TARE_VALUE_KEY], cal_value, values[database.SCALE_CALIBRATION_WEIGHT_KEY])
+
+    return True, ""
 
 def handle_api_create_api_key(values):
     """Called when an API request to create an API key is received."""
@@ -581,8 +621,8 @@ def handle_api_1_0_get_request(request, values):
         return handle_api_indoor_air_request(values)
     if request == 'patio':
         return handle_api_patio_request(values)
-    if request == 'refrigerator':
-        return handle_api_refrigerator_request(values)
+    if request == 'keg':
+        return handle_api_keg_request(values)
     if request == 'scale_calibration':
         return handle_scale_calibration_request(values)
     if request == 'website_status':

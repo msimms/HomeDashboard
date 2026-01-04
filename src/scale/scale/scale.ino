@@ -592,7 +592,7 @@ void loop() {
 
   // Format the output.
   char buff[800];
-  snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"refrigerator\", \"api_key\": \"%s\", \"keg\": %f}", API_KEY, raw_value);
+  snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"keg\", \"api_key\": \"%s\", \"keg\": %f}", API_KEY, raw_value);
   Serial.println(buff);
 
   // Send.
