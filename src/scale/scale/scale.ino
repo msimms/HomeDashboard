@@ -260,16 +260,16 @@ void setup_scale(void) {
   delay(10);
 }
 
-/// @function readHx711
+/// @function read_hx711
 /// Called to read a value from a single HX711.
-long readHx711(HX711 hx) {
+long read_hx711(HX711 hx) {
   uint8_t loop_count = 0;
   while (!hx.is_ready() && loop_count < 100) {
     delay(10);
     ++loop_count;
   }
   if (hx.is_ready()) {
-    return hx.read_average();
+    return hx.read_average(32);
   }
   return ERROR_NUM;
 }
@@ -280,7 +280,7 @@ long read_scale_value(void) {
   long sum = 0;
 
   // Load Cell 1
-  g_raw_value_1 = readHx711(g_hx711_1);
+  g_raw_value_1 = read_hx711(g_hx711_1);
   if (g_raw_value_1 == ERROR_NUM) {
     Serial.println("[ERROR] Failed to read from HX711 #1");
     return ERROR_NUM;
@@ -290,7 +290,7 @@ long read_scale_value(void) {
   }
 
   // Load Cell 2
-  g_raw_value_2 = readHx711(g_hx711_2);
+  g_raw_value_2 = read_hx711(g_hx711_2);
   if (g_raw_value_2 == ERROR_NUM) {
     Serial.println("[ERROR] Failed to read from HX711 #2");
     return ERROR_NUM;
@@ -300,7 +300,7 @@ long read_scale_value(void) {
   }
 
   // Load Cell 3
-  g_raw_value_3 = readHx711(g_hx711_3);
+  g_raw_value_3 = read_hx711(g_hx711_3);
   if (g_raw_value_3 == ERROR_NUM) {
     Serial.println("[ERROR] Failed to read from HX711 #3");
     return ERROR_NUM;
@@ -310,7 +310,7 @@ long read_scale_value(void) {
   }
 
   // Load Cell 4
-  g_raw_value_4 = readHx711(g_hx711_4);
+  g_raw_value_4 = read_hx711(g_hx711_4);
   if (g_raw_value_4 == ERROR_NUM) {
     Serial.println("[ERROR] Failed to read from HX711 #4");
     return ERROR_NUM;
@@ -600,5 +600,9 @@ void loop() {
 
   // Wait a few seconds (so people can read the display) and then go into deep sleep.
   delay(10000);
+  g_hx711_1.power_down();
+  g_hx711_2.power_down();
+  g_hx711_3.power_down();
+  g_hx711_4.power_down();
   asm volatile("wfi");
 }
