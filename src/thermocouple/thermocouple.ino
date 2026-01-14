@@ -129,8 +129,12 @@ void post_status(String str) {
 }
 
 void setup() {
+
+  // Initialize serial and wait for port to open.
   Serial.begin(115200);
-  delay(500);
+  while (!Serial) {
+    delay(100);
+  }
   Serial.println("MAX6675 + ESP8266 ready");
 }
 
