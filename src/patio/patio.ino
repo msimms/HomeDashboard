@@ -22,7 +22,7 @@
 int LED = 13;
 
 // Temperature and humidity sensor.
-AM2315C DHT;
+AM2315C DHT(&Wire);
 
 // RED    -------- | VDD             |
 // YELLOW -------- | SDA    AM2315C  |
@@ -56,11 +56,6 @@ void read_temperature_and_humidity_from_am2315c(float* temp_c, float* humidity) 
   else {
     Serial.print("[ERROR] DHT.read() returned ");
     Serial.println(status);
-
-    Wire.end();
-    delay(5);
-    Wire.begin();
-    Wire.setTimeout(2500);
   }
 }
 
@@ -166,15 +161,6 @@ void setup_anemometer() {
   Serial.println("[INFO] Done setting up the anemometer...");
 }
 
-/// @function i2c_reinit
-void i2c_reinit() {
-  Wire.end();
-  delay(5);
-  Wire.begin();
-  Wire.setTimeout(2500); // prevents permanent hangs
-  delay(1000);
-}
-
 /// @function setup_am2315c
 void setup_am2315c() {
   Serial.println("[INFO] Setting up the AM2315...");
@@ -184,6 +170,7 @@ void setup_am2315c() {
   Wire.setWireTimeout(2500, true);
 #endif
 
+  // Use external resistors instead of the internal pullups.
   //pinMode(A4, INPUT_PULLUP);
   //pinMode(A5, INPUT_PULLUP);
 
@@ -194,6 +181,13 @@ void setup_am2315c() {
   delay(1000);
 
   Serial.println("[INFO] Done setting up the AM2315...");
+}
+
+/// @function dht_reinit
+void dht_reinit() {
+  Wire.end();
+  delay(5);
+  setup_am2315c();
 }
 
 /// @function setup
@@ -219,9 +213,6 @@ void setup() {
 /// @function loop
 void loop() {
 
-  // Re-init I2C on wake from sleep.
-  //i2c_reinit();
-
   // Turn the LED on.
   digitalWrite(LED, HIGH);
 
@@ -233,7 +224,12 @@ void loop() {
   Serial.println("[INFO] Reading temperature and humidity...");
   float temp_c = 0.0;
   float humidity = 0.0;
-  read_temperature_and_humidity_from_am2315c(&temp_c, &humidity);
+  if (DHT.isConnected()) {
+    read_temperature_and_humidity_from_am2315c(&temp_c, &humidity);
+  }
+  else {
+    Serial.println("[ERROR] The temperature and humidity sensor is not connected!");
+  }
 
   // Read soil moisture sensor.
   Serial.println("[INFO] Reading soil moisture...");
@@ -253,4 +249,7 @@ void loop() {
 
   // Wait.
   delay(600000);
+
+  // Re-init I2C on wake from sleep.
+  dht_reinit();
 }
