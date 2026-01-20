@@ -133,32 +133,34 @@ void loop() {
     // Reformat the output for the attached display.
     // Present as a carousel as the screen is small and hard to read.
     // This will also implement the delay until the next read.
-    for (int i = 0; i < 5; ++i) {
-      char line[32];
+    for (int duplicate_count = 0; duplicate_count < 2; ++duplicate_count) {
+      for (int item_index = 0; item_index < 5; ++item_index) {
+        char line[32];
 
-      switch (i) {
-        case 0:
-          snprintf(line, sizeof(line) - 1, "%u ppm", co2);
-          update_display(line);
-          break;
-        case 1:
-          snprintf(line, sizeof(line) - 1, "%s C", temp_buf);
-          update_display(line);
-          break;
-        case 2:
-          snprintf(line, sizeof(line) - 1, "%s %%", humidity_buf);
-          update_display(line);
-          break;
-        case 3:
-          snprintf(line, sizeof(line) - 1, "VOC %u", sraw);
-          update_display(line);
-          break;
-        case 4:
-          snprintf(line, sizeof(line) - 1, "VOCI %u", voc_index);
-          update_display(line);
-          break;
+        switch (item_index) {
+          case 0:
+            snprintf(line, sizeof(line) - 1, "%u ppm", co2);
+            update_display(line);
+            break;
+          case 1:
+            snprintf(line, sizeof(line) - 1, "%s C", temp_buf);
+            update_display(line);
+            break;
+          case 2:
+            snprintf(line, sizeof(line) - 1, "%s %%", humidity_buf);
+            update_display(line);
+            break;
+          case 3:
+            snprintf(line, sizeof(line) - 1, "VOC %u", sraw);
+            update_display(line);
+            break;
+          case 4:
+            snprintf(line, sizeof(line) - 1, "VOCI %u", voc_index);
+            update_display(line);
+            break;
+        }
+        delay(6000);
       }
-      delay(12000);
     }
   }
 }
