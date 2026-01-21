@@ -56,6 +56,210 @@ function graph_data_sort(a, b) {
 
 /// @function draw_graph
 /// A function that allows the graph to be updated is returned.
+function draw_graph2(data, settings, column_index = 0) {
+    let parent = "#charts";
+    let parent_width = document.getElementById("charts").offsetWidth;
+
+    let margin = { top: 20, right: 0, bottom: 40, left: 80 };
+
+    let total_width = parent_width - margin.left - margin.right; // usable width
+    let column_width = total_width / settings.num_columns; // total divided into columns
+
+    let left = (column_index * column_width) + margin.left;
+    let height = settings.height - margin.top - margin.bottom;
+
+    let svg_width = column_width;
+    let svg_height = height + margin.top + margin.bottom;
+
+    // Scale the data to milliseconds.
+    settings.data = data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
+
+    let tooltip = d3.select("#charts")
+        .append("div")
+            .attr("id", settings.element_id + "_tooltip")
+            .style("opacity", 0)
+            .style("position", "absolute")
+            .style("visibility", "hidden")
+            .style("z-index", 1)
+            .style("cursor", "pointer")
+            .style("background-color", "gray")
+            .style("border", "solid")
+            .style("border-width", "1px")
+            .style("border-radius", "5px")
+            .style("padding", "10px")
+    let mouseover = function() {
+        tooltip
+            .style("opacity", 0.75)
+            .style("visibility", "visible")
+    }
+    let mousemove = function() {
+        let coordinates = d3.mouse(this);
+        let x = Math.floor((coordinates[0] / column_width) * settings.data.length);
+
+        if (x >= 0 && x < settings.data.length) {
+            let value = settings.data[x].y;
+            var y_str = "";
+
+            if (typeof value == "string") {
+                y_str = value;
+            }
+            else if (typeof value == "number") {
+                y_str = value.toFixed(2);
+            }
+
+            if (y_str.length > 0) {
+                tooltip
+                    .html("<b>" + unix_time_to_local_string(settings.data[x].x) + ", " + y_str + " " + settings.unit_label + "</b>")
+                    .style("top", (event.pageY) + "px")
+                    .style("left", (event.pageX) + "px")
+            }
+        }
+    }
+    let mouseleave = function() {
+        tooltip
+            .style("visibility", "hidden")
+    }
+
+    // Set up the SVG.
+    var svg = d3.select(parent)
+        .append("svg")
+            .attr("id", settings.element_id)
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr("viewBox", "0 0 " + svg_width  + " " + svg_height)
+            .attr("width", svg_width)
+            .attr("height", svg_height)
+            .on('mouseover', mouseover)
+            .on('mousemove', mousemove)
+            .on('mouseleave', mouseleave)
+        .append("g")
+            .attr("transform", "translate(" + left + "," + margin.top + ")");
+
+    // Root group in plot coords (no scale yet).
+    const g = svg.append("g");
+
+    // Add a clipPath: everything out of this area won't be drawn.
+    const clip_id = "plot-clip";
+    g.append("defs")
+        .append("clipPath")
+            .attr("id", clip_id)
+            .attr("clipPathUnits", "userSpaceOnUse")
+        .append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", column_width)
+            .attr("height", height);
+    const plot = g.append("g").attr("clip-path", `url(#${clip_id})`);
+
+    // Define scales.
+    settings.min_loaded_x = d3.min(settings.data, d => d.x);
+    settings.max_loaded_x = d3.max(settings.data, d => d.x);
+    var x_scale = d3.scaleTime()
+        .domain([settings.min_loaded_x, settings.max_loaded_x])
+        .range([0, column_width]);
+    var y_scale = d3.scaleLinear()
+        .domain([d3.min(settings.data, d => d.y), d3.max(settings.data, d => d.y) + 1.0])
+        .range([height, 0]);
+
+    // Add the grid lines.
+    let x_axis_grid = d3.axisBottom(x_scale)
+        .tickFormat(d3.timeFormat("%X"));
+    svg.append('g')
+        .attr('class', 'x axis-grid')
+        .attr('transform', 'translate(0,' + height + ')')
+        .call(x_axis_grid);
+    let y_axis_grid = d3.axisLeft(y_scale)
+        .tickSize(-column_width)
+        .tickSizeOuter(0)
+        .tickFormat('')
+        .ticks(5);
+    svg.append('g')
+        .attr('class', 'y axis-grid')
+        .call(y_axis_grid);
+
+    // Add the axes.
+    let x_axis = svg.append("g")
+        .attr("class", "x_axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(x_axis_grid);
+    let y_axis = svg.append("g")
+        .attr("class", "y_axis")
+        .call(d3.axisLeft(y_scale));
+
+    // Add the title and the X axis label.
+    if (settings.label.length > 0) {
+        svg.append("text")
+            .attr("class", "axis")
+            .attr("id", settings.element_id + "_title")
+            .attr("transform", "translate(" + (column_width / 2) + "," + (height + margin.top - 4) + ")")
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text(settings.label);
+    }
+
+    // Add the Y axis label.
+    if (settings.unit_label.length > 0) {
+        svg.append("text")
+            .attr("class", "axis")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0 - (left))
+            .attr("x", 0 - (height / 2))
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text(settings.unit_label);
+    }
+
+    // Line generator.
+    var line = d3.line()
+        .x(d => x_scale(d.x))
+        .y(d => y_scale(d.y));
+
+    // Path for the line
+    const path = plot.append("path")
+        .datum(settings.data)
+        .attr("stroke", settings.color)
+        .attr("stroke-width", 3)
+        .attr("d", line)
+
+    // Update function
+    function update(new_data) {
+
+        // Scale the data to milliseconds.
+        new_data = new_data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
+
+        // Concatenate. Need to do this so that tooltips work.
+        settings.data = settings.data.concat(new_data);
+
+        // Sort and remove duplicates.
+        settings.data.reduce((res, item) => (res.every(resItem => resItem.x != item.x) ? res.push(item) : true, res), [])
+            .sort(graph_data_sort);
+
+        // Re-scale.
+        // Update domains
+        x_scale.domain(d3.extent(settings.data, d => d.x));
+        y_scale.domain([d3.min(settings.data, d => d.y) - 1, d3.max(settings.data, d => d.y) + 1]);
+
+        // Update axes.
+        x_axis
+            .transition()
+            .duration(500)
+            .call(d3.axisBottom(x_scale).ticks(7));
+        y_axis
+            .transition()
+            .duration(500)
+            .call(d3.axisLeft(y_scale));
+
+        // Update line
+        path.datum(settings.data)
+            .transition()
+            .duration(500)
+            .attr("d", line);
+    }
+
+    settings.update_func = update;
+}
+
+/// @function draw_graph
+/// A function that allows the graph to be updated is returned.
 function draw_graph(data, settings, column_index = 0) {
     let parent = "#charts";
     let parent_width = document.getElementById("charts").offsetWidth;
@@ -148,31 +352,7 @@ function draw_graph(data, settings, column_index = 0) {
             .attr("y", 0)
             .attr("width", column_width)
             .attr("height", height);
-
-    // Create the scatter variable: where both the circles and the brush take place.
     const plot = g.append("g").attr("clip-path", `url(#${clip_id})`);
-
-    // Define the gradient.
-    if (settings.fill) {
-        var gradient = g
-            .append("linearGradient")
-                .attr("id", "gradient_" + settings.element_id)
-                .attr("y1", height * 0.5)
-                .attr("y2", height)
-                .attr("x1", "0")
-                .attr("x2", "0")
-                .attr("gradientUnits", "userSpaceOnUse");
-        gradient
-            .append("stop")
-                .attr("offset", "0")
-                .attr("stop-color", settings.color)
-                .attr("stop-opacity", 1.0);
-        gradient
-            .append("stop")
-                .attr("offset", "1")
-                .attr("stop-color", settings.color)
-                .attr("stop-opacity", 0.5);
-    }
 
     // Define scales.
     settings.min_loaded_x = d3.min(settings.data, d => d.x);
@@ -180,61 +360,9 @@ function draw_graph(data, settings, column_index = 0) {
     var x_scale = d3.scaleTime()
         .domain([settings.min_loaded_x, settings.max_loaded_x])
         .range([0, column_width]);
-
-    // If we were given labels then we have a non-numeric graph.
-    if (settings.y_axis_labels.length > 0) {
-        var y_scale = d3.scaleBand()
-            .domain(settings.y_axis_labels)
-            .range([height, 0]);
-    }
-    else {
-        var y_scale = d3.scaleLinear()
-            .domain([d3.min(settings.data, d => d.y), d3.max(settings.data, d => d.y) + 1.0])
-            .range([height, 0]);
-    }
-
-    // Define the line.
-    var line = d3.line()
-        .x(d => x_scale(d.x))
-        .y(d => y_scale(d.y));
-
-    // Draw the area under the line.
-    if (settings.fill) {
-        var area = d3.area()
-            .x(d => x_scale(d.x))
-            .y0(height)
-            .y1(d => y_scale(d.y));
-        var area_path = plot.append("path")
-            .datum(settings.data)
-            .attr('fill', 'url(#gradient_' + settings.element_id + ')')
-            .attr("d", area);
-    }
-    else {
-        var area_path = plot.append("path")
-            .datum(settings.data)
-            .attr("stroke", settings.color)
-            .attr("stroke-width", 3)
-            .attr("d", line)
-    }
-
-    // Draw the initial data line.
-    if (settings.fill) {
-        var line_path = plot.append("path")
-            .datum(settings.data)
-            .attr("fill", settings.color)
-            .attr("stroke", settings.color)
-            .attr("stroke-width", 3)
-            .attr("d", line)
-            .attr("id", "pointline");
-    }
-    else {
-        var line_path = plot.append("path")
-            .datum(settings.data)
-            .attr("stroke", settings.color)
-            .attr("stroke-width", 3)
-            .attr("d", line)
-            .attr("id", "pointline");
-    }
+    var y_scale = d3.scaleLinear()
+        .domain([d3.min(settings.data, d => d.y), d3.max(settings.data, d => d.y) + 1.0])
+        .range([height, 0]);
 
     // Add the grid lines.
     let x_axis_grid = d3.axisBottom(x_scale)
@@ -256,24 +384,11 @@ function draw_graph(data, settings, column_index = 0) {
         .attr('class', 'y axis-grid')
         .call(y_axis_grid);
 
-    // Add the X axis.
+    // Add axes.
     let x_axis = svg.append("g")
         .attr("class", "x_axis")
         .attr("transform", "translate(0," + height + ")")
         .call(x_axis_grid);
-
-    // Add the title and the X axis label.
-    if (settings.label.length > 0) {
-        svg.append("text")
-            .attr("class", "axis")
-            .attr("id", settings.element_id + "_title")
-            .attr("transform", "translate(" + (column_width / 2) + "," + (height + margin.top - 4) + ")")
-            .attr("dy", "1em")
-            .style("text-anchor", "middle")
-            .text(settings.label);
-    }
-
-    // Add the Y axis.
     let y_axis = svg.append("g")
         .attr("class", "y_axis")
         .call(d3.axisLeft(y_scale));
@@ -289,6 +404,26 @@ function draw_graph(data, settings, column_index = 0) {
             .style("text-anchor", "middle")
             .text(settings.unit_label);
     }
+
+    // Line generator.
+    var line = d3.line()
+        .x(d => x_scale(d.x))
+        .y(d => y_scale(d.y));
+
+    // Draw the area under the line.
+    var area_path = plot.append("path")
+        .datum(settings.data)
+        .attr("stroke", settings.color)
+        .attr("stroke-width", 3)
+        .attr("d", line)
+
+    // Draw the initial data line.
+    var line_path = plot.append("path")
+        .datum(settings.data)
+        .attr("stroke", settings.color)
+        .attr("stroke-width", 3)
+        .attr("d", line)
+        .attr("id", "pointline");
 
     // Set the zoom and pan features: how much you can zoom, on which part, and what to do when there is a zoom.
     var zoom = d3.zoom()

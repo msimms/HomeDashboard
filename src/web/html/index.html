@@ -264,7 +264,7 @@
                 if (co2_readings.length > 0) {
                     if (g_co2_graph == null) {
                         g_co2_graph = create_graph_settings("co2_chart", "Indoor CO2", "PPM", "yellow", CHART_HEIGHT);
-                        draw_graph(co2_readings, g_co2_graph);
+                        draw_graph2(co2_readings, g_co2_graph);
                     }
                     else {
                         g_co2_graph.update_func(co2_readings);
@@ -274,7 +274,7 @@
                 if (temp_readings.length > 0) {
                     if (g_temp_graph == null) {
                         g_temp_graph = create_graph_settings("temp_chart", "Indoor Temperature", "C", "red", CHART_HEIGHT);
-                        draw_graph(temp_readings, g_temp_graph);
+                        draw_graph2(temp_readings, g_temp_graph);
                     }
                     else {
                         g_temp_graph.update_func(temp_readings);
@@ -284,7 +284,7 @@
                 if (humidity_readings.length > 0) {
                     if (g_humidity_graph == null) {
                         g_humidity_graph = create_graph_settings("humidity_chart", "Indoor Humidity", "%", "blue", CHART_HEIGHT);
-                        draw_graph(humidity_readings, g_humidity_graph);
+                        draw_graph2(humidity_readings, g_humidity_graph);
                     }
                     else {
                         g_humidity_graph.update_func(humidity_readings);
@@ -293,7 +293,7 @@
                 if (voc_readings.length > 0) {
                     if (g_voc_graph == null) {
                         g_voc_graph = create_graph_settings("voc_chart", "VOC", "", "green", CHART_HEIGHT);
-                        draw_graph(voc_readings, g_voc_graph);
+                        draw_graph2(voc_readings, g_voc_graph);
                     }
                     else {
                         g_voc_graph.update_func(voc_readings);
@@ -302,7 +302,7 @@
                 if (voc_index_readings.length > 0) {
                     if (g_voc_index_graph == null) {
                         g_voc_index_graph = create_graph_settings("voc_index_chart", "VOC Index", "", "green", CHART_HEIGHT);
-                        draw_graph(voc_index_readings, g_voc_index_graph);
+                        draw_graph2(voc_index_readings, g_voc_index_graph);
                     }
                     else {
                         g_voc_index_graph.update_func(voc_index_readings);
