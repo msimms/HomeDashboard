@@ -21,6 +21,10 @@ DerivedData
 *.xcuserstate
 *.xcworkspacedata
 
+# vscode
 .vscode/
+
+# Blender
+*.blend1
 
 arduino_secrets.h
