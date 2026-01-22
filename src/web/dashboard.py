@@ -375,6 +375,16 @@ def handle_api_patio_request(values):
     result = json.dumps(readings)
     return True, result
 
+def handle_api_ac_request(values):
+    """Called when an API request for the AC status is received."""
+    start_ts = 0
+    if START_TS in values:
+        start_ts = int(float(values[START_TS]))
+    db = connect_to_db()
+    readings = list(db.retrieve_ac_status(start_ts))
+    result = json.dumps(readings)
+    return True, result
+
 def handle_api_keg_request(values):
     """Called when an API request for the keg status is received."""
     start_ts = 0
@@ -621,6 +631,8 @@ def handle_api_1_0_get_request(request, values):
         return handle_api_indoor_air_request(values)
     if request == 'patio':
         return handle_api_patio_request(values)
+    if request == 'ac':
+        return handle_api_ac_request(values)
     if request == 'keg':
         return handle_api_keg_request(values)
     if request == 'scale_calibration':

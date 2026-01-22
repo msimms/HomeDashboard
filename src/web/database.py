@@ -51,6 +51,7 @@ SCALE_CALIBRATION_WEIGHT_KEY = "calibration_weight"
 # Collection names.
 COLLECTION_INDOOR_AIR_QUALITY = "indoor_air_quality"
 COLLECTION_PATIO_MONITOR = "patio_monitor"
+COLLECTION_AC = "ac"
 COLLECTION_KEG = "keg"
 COLLECTION_WEBSITE_STATUS = "website_status"
 
@@ -173,6 +174,7 @@ class AppMongoDatabase(Database):
             self.api_keys_collection = self.database['api_keys']
             self.indoor_air_quality = self.database[COLLECTION_INDOOR_AIR_QUALITY]
             self.patio_monitor = self.database[COLLECTION_PATIO_MONITOR]
+            self.ac_monitor = self.database[COLLECTION_AC]
             self.keg = self.database[COLLECTION_KEG]
             self.website_status = self.database[COLLECTION_WEBSITE_STATUS]
         except pymongo.errors.ConnectionFailure as e:
@@ -432,6 +434,8 @@ class AppMongoDatabase(Database):
         try:
             if collection_name == COLLECTION_PATIO_MONITOR:
                 return insert_into_collection(self.patio_monitor, values)
+            if collection_name == COLLECTION_AC:
+                return insert_into_collection(self.ac_monitor, values)
             if collection_name == COLLECTION_KEG:
                 return insert_into_collection(self.keg, values)
             if collection_name == COLLECTION_WEBSITE_STATUS:
@@ -474,6 +478,22 @@ class AppMongoDatabase(Database):
             self.log_error(sys.exc_info()[0])
         return []
 
+    #
+    # AC monitor methods
+    #
+
+    def retrieve_ac_status(self, min_ts):
+        """Retrieve method for AC measurements."""
+        try:
+            filter = {}
+            if min_ts > 0:
+                filter = {"ts": {"$gt": min_ts}}
+            return self.ac_monitor.find(filter, {"_id": 0})
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return []
+        
     #
     # Keg monitor methods
     #
