@@ -335,14 +335,14 @@
                 if (temp_readings.length > 0) {
                     if (g_patio_temp_graph == null) {
                         g_patio_temp_graph = create_graph_settings("temp_chart", "Patio Temperature", "C", "red", 250);
-                        draw_graph([], g_patio_temp_graph);
+                        draw_graph2([], g_patio_temp_graph);
                     }
                     g_patio_temp_graph.update_func(temp_readings);
                 }
                 if (humidity_readings.length > 0) {
                     if (g_patio_humidity_graph == null) {
                         g_patio_humidity_graph = create_graph_settings("humidity_chart", "Patio Humidity", "%", "blue", 250);
-                        draw_graph(humidity_readings, g_patio_humidity_graph);
+                        draw_graph2(humidity_readings, g_patio_humidity_graph);
                     }
                     else {
                         g_patio_humidity_graph.update_func(humidity_readings);
@@ -351,7 +351,7 @@
                 if (moisture_sensor_1_readings.length > 0) {
                     if (g_patio_moisture1_graph == null) {
                         g_patio_moisture1_graph = create_graph_settings("moisture_sensor_1_chart", "Moisture Sensor #1", "%", "green", 250);
-                        draw_graph(moisture_sensor_1_readings, g_patio_moisture1_graph);
+                        draw_graph2(moisture_sensor_1_readings, g_patio_moisture1_graph);
                     }
                     else {
                         g_patio_moisture1_graph.update_func(moisture_sensor_1_readings);
@@ -360,7 +360,7 @@
                 if (moisture_sensor_2_readings.length > 0) {
                     if (g_patio_moisture2_graph == null) {
                         g_patio_moisture2_graph = create_graph_settings("moisture_sensor_2_chart", "Moisture Sensor #2", "%", "green", 250);
-                        draw_graph(moisture_sensor_2_readings, g_patio_moisture2_graph);
+                        draw_graph2(moisture_sensor_2_readings, g_patio_moisture2_graph);
                     }
                     else {
                         g_patio_moisture2_graph.update_func(moisture_sensor_2_readings);
@@ -390,7 +390,7 @@
                 if (ac_outlet_temp_readings.length > 0) {
                     if (g_ac_outlet_temp_graph == null) {
                         g_ac_outlet_temp_graph = create_graph_settings("ac_outlet_temp", "AC Outlet Temp", "", "red", CHART_HEIGHT);
-                        draw_graph(ac_outlet_temp_readings, g_ac_outlet_temp_graph);
+                        draw_graph2(ac_outlet_temp_readings, g_ac_outlet_temp_graph);
                     }
                     else {
                         g_ac_outlet_temp_graph.update_func(ac_outlet_temp_readings);
@@ -427,7 +427,7 @@
                 });
 
                 for (const [key, value] of Object.entries(graphs)) {
-                    draw_graph(value, create_graph_settings(key, key, "Load Time (s)", "gray", 250));
+                    draw_graph2(value, create_graph_settings(key, key, "Load Time (s)", "gray", 250));
                 };
             }
         });
