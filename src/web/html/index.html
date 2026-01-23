@@ -66,6 +66,7 @@
     var g_patio_humidity_graph = null;
     var g_patio_moisture1_graph = null;
     var g_patio_moisture2_graph = null;
+    var g_website_status_graphs = {};
 
     /// @function draw_co2_gauge
     /// Creates a co2 gauge.
@@ -427,7 +428,15 @@
                 });
 
                 for (const [key, value] of Object.entries(graphs)) {
-                    draw_graph2(value, create_graph_settings(key, key, "Load Time (s)", "gray", 250));
+                    if (key in g_website_status_graphs) {
+                        graph_settings = g_website_status_graphs[key];
+                        graph_settings.update_func(value);
+                    }
+                    else {
+                        graph_settings = create_graph_settings(key, key, "Load Time (s)", "gray", 250);
+                        g_website_status_graphs[key] = graph_settings;
+                        draw_graph2(value, graph_settings);
+                    }
                 };
             }
         });
