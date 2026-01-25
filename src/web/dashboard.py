@@ -395,7 +395,7 @@ def handle_api_keg_request(values):
     result = json.dumps(readings)
     return True, result
 
-def handle_scale_calibration_request(values):
+def handle_api_scale_calibration_request(values):
     """Called when an API request for the scale calibration data is received."""
     db = connect_to_db()
     readings = list(db.retrieve_scale_calibration())
@@ -625,6 +625,33 @@ def handle_api_list_api_keys(values):
 
     return True, keys
 
+def handle_api_limits_request(values):
+    """Called when an API request to list sensor limits is received."""
+    # Validate the session cookie.
+    _, user = common_session_check(values)
+
+    # Connect to the database.
+    db = connect_to_db()
+
+    # Query the database.
+    upper_limit, lower_limit = db.retrieve_sensor_limits(values["key"])
+    result = { 'upper_limit': upper_limit, 'lower_limit': lower_limit }
+
+    return True, result
+
+def handle_api_create_limits(values):
+    """Called when an API request to set sensor limits is received."""
+    # Validate the session cookie.
+    _, user = common_session_check(values)
+
+    # Connect to the database.
+    db = connect_to_db()
+
+    # Store.
+    db.create_sensor_limit(values['key'], values['upper_limit'], values['lower_limit'])
+
+    return True, ""
+
 def handle_api_1_0_get_request(request, values):
     """Called to parse a version 1.0 API GET request."""
     if request == 'indoor_air':
@@ -636,11 +663,13 @@ def handle_api_1_0_get_request(request, values):
     if request == 'keg':
         return handle_api_keg_request(values)
     if request == 'scale_calibration':
-        return handle_scale_calibration_request(values)
+        return handle_api_scale_calibration_request(values)
     if request == 'website_status':
         return handle_api_website_status(values)
     if request == 'list_api_keys':
         return handle_api_list_api_keys(values)
+    if request == 'limits':
+        return handle_api_limits_request(values)
     return False, ""
 
 def handle_api_1_0_post_request(request, values):
@@ -659,6 +688,8 @@ def handle_api_1_0_post_request(request, values):
         return handle_api_calibrate_scale(values)
     if request == 'create_api_key':
         return handle_api_create_api_key(values)
+    if request == 'create_limits':
+        return handle_api_create_limits(values)
     return False, ""
 
 def handle_api_1_0_delete_request(request, values):

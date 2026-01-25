@@ -21,17 +21,19 @@
 <body>
 
 <!-- Gauges Start -->
-<div id="gauges" class="block gauge-container">
-    <div>
-        <h3>Indoor CO<sup>2</sup> (PPM)</h3>
-        <canvas id="indoor-co2-gauge"></canvas>
-    </div>
-    <div>
-        <h3>Indoor Temperature (&deg;C)</h3>
-        <canvas id="indoor-temp-gauge"></canvas>
-    </div>
-    <div>
-        <div id="keg-level"></div>
+<div class="block">
+    <div id="gauges" class="block gauge-container">
+        <div>
+            <h3>Indoor CO<sup>2</sup> (PPM)</h3>
+            <canvas id="indoor-co2-gauge"></canvas>
+        </div>
+        <div>
+            <h3>Indoor Temperature (&deg;C)</h3>
+            <canvas id="indoor-temp-gauge"></canvas>
+        </div>
+        <div>
+            <div id="keg-level"></div>
+        </div>
     </div>
 </div>
 <!-- Gauges End -->
@@ -41,10 +43,19 @@
 </div>
 <!-- Graphs End -->
 
+<!-- Notifications Start -->
+<div class="block">
+    <div>
+        <button id="enable_notifications">Enable notifications</button>
+    </div>
+</div>
+<!-- Notifications Start -->
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js" integrity="sha512-RJJ1NNC88QhN7dwpCY8rm/6OxI+YdQP48DrLGe/eSAd+n+s1PXwQkkpzzAgoJe4cZFW2GALQoxox61gSY2yQfg==" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/gaugeJS/dist/gauge.min.js"></script>
 <script src="${root_url}/js/js-fluid-meter.js"></script>
 <script src="${root_url}/js/common.js"></script>
+<script src="${root_url}/js/cookies.js"></script>
 <script src="${root_url}/js/graphs.js"></script>
 <script>
 
@@ -233,6 +244,37 @@
         return settings;
     }
 
+    /// @function check_for_notifications
+    function check_for_notifications(values, key) {
+        if (values.length == 0) {
+            return;
+        }
+
+        let api_url = "${root_url}/api/1.0/limits?key=" + key + "&session_cookie=" + get_session_cookie();
+
+        send_get_request_async(api_url, function (response_code, response_text) {
+            if (response_code == 200) {
+                const limits = JSON.parse(response_text);
+                let most_recent = values.at(-1);
+
+                if ('upper_limit' in limits) {
+                    let limit = limits['upper_limit'];
+                    if (most_recent.y > limit) {
+                        let msg = key + " is over the limit of " + limit;
+                        maybe_notify(msg);
+                    }
+                }
+                if ('lower_limit' in limits) {
+                    let limit = limits['lower_limit'];
+                    if (most_recent.y < limit) {
+                        let msg = key + " is under the limit of " + limit;
+                        maybe_notify(msg);
+                    }
+                }
+            }
+        });
+    }
+
     /// @function get_indoor_air_quality_readings
     function get_indoor_air_quality_readings(start_ts) {
         let api_url = "${root_url}/api/1.0/indoor_air?start_ts=" + start_ts
@@ -250,10 +292,10 @@
 
                 for (let record of records) {
                     let ts = record['ts'];
-                    if (record['co2_ppm'] != null)
-                        co2_readings.push( { x: ts, y: record['co2_ppm'] });
-                    if (record['temp_c'] != null)
-                        temp_readings.push( { x: ts, y: record['temp_c'] });
+                    if (record[CO2_KEY] != null)
+                        co2_readings.push( { x: ts, y: record[CO2_KEY] });
+                    if (record[TEMP_KEY] != null)
+                        temp_readings.push( { x: ts, y: record[TEMP_KEY] });
                     if (record['humidity'] != null)
                         humidity_readings.push( { x: ts, y: record['humidity'] });
                     if (record['voc'] != null)
@@ -271,6 +313,7 @@
                         g_co2_graph.update_func(co2_readings);
                     }
                     g_co2_gauge.set(co2_readings.at(-1).y);
+                    check_for_notifications(co2_readings, CO2_KEY);
                 }
                 if (temp_readings.length > 0) {
                     if (g_temp_graph == null) {
@@ -281,6 +324,7 @@
                         g_temp_graph.update_func(temp_readings);
                     }
                     g_indoor_temp_gauge.set(temp_readings.at(-1).y);
+                    check_for_notifications(temp_readings, TEMP_KEY);
                 }
                 if (humidity_readings.length > 0) {
                     if (g_humidity_graph == null) {
@@ -320,6 +364,7 @@
         send_get_request_async(api_url, function (response_code, response_text) {
             if (response_code == 200) {
                 const records = JSON.parse(response_text);
+
                 var temp_readings = [];
                 var humidity_readings = [];
                 var moisture_sensor_1_readings = [];
@@ -327,6 +372,7 @@
 
                 for (let record of records) {
                     let ts = record['ts'];
+
                     temp_readings.push( { x: ts, y: record['temperature'] });
                     humidity_readings.push( { x: ts, y: record['humidity'] });
                     moisture_sensor_1_readings.push( { x: ts, y: record['moisture_sensor_1'] });
@@ -479,8 +525,31 @@
         g_keg_level.setPercentage(50);
     }
 
+    /// @function maybe_notify
+    function maybe_notify(msg) {
+        if (!("Notification" in window)) {
+            return;
+        }
+
+        if (Notification.permission === "granted") {
+            new Notification("🏡 Home Dashboard", { body: msg,
+                tag: "temp-high", // helps collapse duplicates in some browsers
+                renotify: true
+            });
+        }
+    }
+
+    /// @function request_notifications
+    function request_notifications() {
+        document.getElementById("enable_notifications").addEventListener("click", async () => {
+            const perm = await Notification.requestPermission();
+            alert("Notification permission: " + perm);
+        });
+    }
+
     draw_gauges();
     get_readings();
+    request_notifications();
 
 </script>
 

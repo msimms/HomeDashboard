@@ -49,11 +49,16 @@ SCALE_CALIBRATION_VALUE_KEY = "calibration_value"
 SCALE_CALIBRATION_WEIGHT_KEY = "calibration_weight"
 
 # Collection names.
+COLLECTION_USERS = "users"
+COLLECTION_SESSIONS = "sessions"
+COLLECTION_SCALE_CALIBRATIONS = "scale_calibrations"
+COLLECTION_API_KEYS = "api_keys"
 COLLECTION_INDOOR_AIR_QUALITY = "indoor_air_quality"
 COLLECTION_PATIO_MONITOR = "patio_monitor"
 COLLECTION_AC = "ac"
 COLLECTION_KEG = "keg"
 COLLECTION_WEBSITE_STATUS = "website_status"
+COLLECTION_LIMITS = "limits"
 
 # Keys associated with API key management.
 API_KEY = "key"
@@ -168,10 +173,11 @@ class AppMongoDatabase(Database):
                 raise DatabaseException("Could not connect to MongoDB.")
 
             # Handles to the various collections.
-            self.users_collection = self.database['users']
-            self.sessions_collection = self.database['sessions']
-            self.scale_calibrations_collection = self.database['scale_calibrations']
-            self.api_keys_collection = self.database['api_keys']
+            self.users_collection = self.database[COLLECTION_USERS]
+            self.sessions_collection = self.database[COLLECTION_SESSIONS]
+            self.scale_calibrations_collection = self.database[COLLECTION_SCALE_CALIBRATIONS]
+            self.api_keys_collection = self.database[COLLECTION_API_KEYS]
+            self.limits_collection = self.database[COLLECTION_LIMITS]
             self.indoor_air_quality = self.database[COLLECTION_INDOOR_AIR_QUALITY]
             self.patio_monitor = self.database[COLLECTION_PATIO_MONITOR]
             self.ac_monitor = self.database[COLLECTION_AC]
@@ -419,7 +425,42 @@ class AppMongoDatabase(Database):
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
         return False
-        
+
+    #
+    # Sensor limit methods
+    #
+
+    def create_sensor_limit(self, key, lower_limit, upper_limit):
+        """Create method for sensor limits."""
+        if key is None:
+            raise Exception("Unexpected empty object: key")
+        if lower_limit is None:
+            raise Exception("Unexpected empty object: lower_limit")
+        if upper_limit is None:
+            raise Exception("Unexpected empty object: upper_limit")
+
+        try:
+            post = { "key": str(key), "lower_limit": lower_limit, "upper_limit": upper_limit }
+            return insert_into_collection(self.limits_collection, post)
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return False
+
+    def retrieve_sensor_limits(self, key):
+        """Retrieve method for sensor limits."""
+        if key is None:
+            raise Exception("Unexpected empty object: key")
+
+        try:
+            limits_result = self.limits_collection.find_one({ "key": key }, {})
+            if limits_result is not None:
+                return limits_result["lower_limit"], limits_result["upper_limit"]
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return None, None
+
     #
     # Status methods
     #
@@ -455,8 +496,8 @@ class AppMongoDatabase(Database):
         try:
             filter = {}
             if min_ts > 0:
-                filter = {"ts": {"$gt": min_ts}}
-            return self.indoor_air_quality.find(filter, {"_id": 0})
+                filter = { "ts": { "$gt": min_ts } }
+            return self.indoor_air_quality.find(filter, { "_id": 0 })
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
@@ -471,7 +512,7 @@ class AppMongoDatabase(Database):
         try:
             filter = {}
             if min_ts > 0:
-                filter = {"ts": {"$gt": min_ts}}
+                filter = { "ts": { "$gt": min_ts } }
             return self.patio_monitor.find(filter, {"_id": 0})
         except:
             self.log_error(traceback.format_exc())
@@ -487,7 +528,7 @@ class AppMongoDatabase(Database):
         try:
             filter = {}
             if min_ts > 0:
-                filter = {"ts": {"$gt": min_ts}}
+                filter = { "ts": { "$gt": min_ts } }
             return self.ac_monitor.find(filter, {"_id": 0})
         except:
             self.log_error(traceback.format_exc())
@@ -503,7 +544,7 @@ class AppMongoDatabase(Database):
         try:
             filter = {}
             if min_ts > 0:
-                filter = {"ts": {"$gt": min_ts}}
+                filter = { "ts": { "$gt": min_ts } }
             return self.keg.find(filter, {"_id": 0})
         except:
             self.log_error(traceback.format_exc())
@@ -527,7 +568,7 @@ class AppMongoDatabase(Database):
     def update_scale_calibration(self, name, tare_value, cal_value, cal_weight):
         """Update method for scale calibrations."""
         try:
-            cal = self.scale_calibrations_collection.find_one({ SCALE_NAME_KEY: name }, {"_id": 0})
+            cal = self.scale_calibrations_collection.find_one({ SCALE_NAME_KEY: name }, {"_id": 0 })
             if cal is not None:
                 if tare_value is not None:
                     cal[SCALE_TARE_VALUE_KEY] = tare_value
@@ -543,7 +584,7 @@ class AppMongoDatabase(Database):
     def retrieve_scale_calibration(self, name):
         """Retrieve method for scale calibrations."""
         try:
-            return self.scale_calibrations_collection.find_one({ SCALE_NAME_KEY: name }, {"_id": 0})
+            return self.scale_calibrations_collection.find_one({ SCALE_NAME_KEY: name }, {"_id": 0 })
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])

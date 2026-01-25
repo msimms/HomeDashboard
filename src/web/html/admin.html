@@ -94,10 +94,39 @@
         });
     }
 
+    /// @function update_limits
+    function update_limits(key, upper, lower) {
+        let api_url = "/api/1.0/create_limits";
+        let dict = {};
+
+        dict["session_cookie"] = get_session_cookie();
+        dict["key"] = key;
+        dict["upper_limit"] = upper;
+        dict["lower_limit"] = lower;
+
+        send_post_request_async(api_url, dict, function(status, response) {
+            if (status == 200) {
+                window.location.replace("${root_url}/admin");
+            }
+            else {
+                alert("Sensor limit creation failed!");
+            }
+        });
+    }
+
+    /// @function update_all_limits
+    function update_all_limits() {
+        update_limits(TEMP_KEY, get_element_text('temp_upper'), get_element_text('temp_lower'));
+        update_limits(CO2_KEY, get_element_text('co2_limit'), 0);
+    }
+
     list_api_keys();
 </script>
 
+<!-- API Keys Start -->
 <div id="api_keys_list" class="block">
+    <h2>API Keys</h2>
+
     <table id="api_keys_table">
     </table>
 
@@ -105,6 +134,26 @@
         <button type="button" onclick="javascript:create_api_key()">Create an API Key</button>
     </div>
 </div>
+<!-- API Keys End -->
+
+<!-- Notifications Start -->
+<div id="notifications" class="block">
+    <h2>Notifications</h2>
+    <div>
+        <label>Temperature Upper Limit (C)</label><br>
+        <input type="number" id="temp_upper" value="100"><br>
+        <label>Temperature Lower Limit (C)</label><br>
+        <input type="number" id="temp_lower" value="0">
+    </div>
+    <div>
+        <label>CO<sup>2</sup> Limit (ppm)</label><br>
+        <input type="number" id="co2_limit" value="1200">
+    </div>
+    <div>
+        <button type="button" onclick="update_all_limits()">Update</button>
+    </div>
+</div>
+<!-- Notifications End -->
 
 </body>
 

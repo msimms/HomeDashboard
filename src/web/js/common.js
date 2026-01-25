@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+// Global constants
+const CO2_KEY = "co2_ppm"
+const TEMP_KEY = "temp_c"
+
 /// @function is_numeric
 function is_numeric(num) {
     return !isNaN(num)
@@ -77,4 +81,10 @@ function send_delete_request_async(url, callback) {
         }
     }
     xml_http.send();
+}
+
+/// @function get_element_text
+function get_element_text(element_id) {
+    let cell = document.getElementById(element_id);
+    return cell.value;
 }

@@ -72,11 +72,13 @@ h1 {
     font-size: 250%;
     margin: 0px;
     padding: 0px;
+    text-align: center;
 }
 
 h2 {
     color: var(--text);
     background: var(--theme);
+    text-align: center;
 }
 
 h3 {
@@ -164,9 +166,27 @@ tr:first-child {
     max-width: 80%;
 }
 
+.block button {
+    background-color: #f2f2f2;
+    background-image: linear-gradient(to bottom, #f2f2f2, #f2f2f2);
+    border: 1px solid #bfbfbf;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 0 white, inset 0 -1px 0 #d9d9d9, inset 0 0 0 1px #f2f2f2, 0 2px 4px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    color: #8c8c8c;
+    cursor: pointer;
+    display: inline-block;
+    font-family: Verdana, sans-serif;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 20px;
+    padding: 16px 16px 16px 16px;
+    transition: all 20ms ease-out;
+    vertical-align: middle;
+}
+
 .gauge-container div {
     display: inline-block;
-    flex-direction: column;
     align-items: center;
     padding-top: 40px;
     width: 320px;
