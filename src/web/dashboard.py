@@ -647,6 +647,9 @@ def handle_api_create_limits(values):
     # Connect to the database.
     db = connect_to_db()
 
+    # Remove any old entries.
+    db.delete_sensor_limits(values['key'])
+
     # Store.
     db.create_sensor_limit(values['key'], values['upper_limit'], values['lower_limit'])
 

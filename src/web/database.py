@@ -461,6 +461,20 @@ class AppMongoDatabase(Database):
             self.log_error(sys.exc_info()[0])
         return None, None
 
+    def delete_sensor_limits(self, key):
+        """Delete method for a user."""
+        if key is None:
+            raise Exception("Unexpected empty object: key")
+
+        try:
+            deleted_result = self.limits_collection.delete_many({ "key": key })
+            if deleted_result is not None:
+                return True
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return False
+
     #
     # Status methods
     #
