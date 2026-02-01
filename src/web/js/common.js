@@ -88,3 +88,28 @@ function get_element_text(element_id) {
     let cell = document.getElementById(element_id);
     return cell.value;
 }
+
+/// @function set_element_text
+function set_element_text(element_id, text) {
+    if (text == null) {
+        return;
+    }
+    if (text.length == 0) {
+        return;
+    }
+
+    let cell = document.getElementById(element_id);
+    if (cell != null) {
+        cell.value = text;
+    }
+    else {
+        console.log(element_id + " not found!");
+    }
+}
+
+/// @function remove_element_children
+function remove_element_children(item) {
+    while (item.firstChild) {
+        item.removeChild(item.lastChild);
+    }
+}

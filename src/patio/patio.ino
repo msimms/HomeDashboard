@@ -166,6 +166,7 @@ void setup_am2315c() {
   Serial.println("[INFO] Setting up the AM2315...");
 
   Wire.begin();
+  Wire.setClock(100000);  // 100 kHz
 #if defined(WIRE_HAS_TIMEOUT)
   Wire.setWireTimeout(2500, true);
 #endif

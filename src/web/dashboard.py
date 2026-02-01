@@ -72,6 +72,8 @@ PARAM_HASH_KEY = "hash" # Password hash
 PARAM_API_KEY = "api_key"
 PARAM_COLLECTION = "collection"
 PARAM_TIMESTAMP = "ts"
+PARAM_NAME = "name"
+PARAM_LIMITS_KEY = "key"
 
 def login_required(function_to_protect):
     @functools.wraps(function_to_protect)
@@ -398,7 +400,7 @@ def handle_api_keg_request(values):
 def handle_api_scale_calibration_request(values):
     """Called when an API request for the scale calibration data is received."""
     db = connect_to_db()
-    readings = list(db.retrieve_scale_calibration())
+    readings = list(db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY]))
     result = json.dumps(readings)
     return True, result
 
@@ -541,6 +543,14 @@ def handle_api_update_status(values):
 
     return True, ""
 
+def latest_scale_reading(db):
+    """Returns the latest scale reading."""
+    ten_minutes_ago = time.time() - 600.0
+    recent_scale_readings = list(db.retrieve_keg_status(ten_minutes_ago))
+    if len(recent_scale_readings) == 0:
+        raise ApiMalformedRequestException("No scale readings within the last ten minutes.")
+    return recent_scale_readings[-1]
+
 def handle_api_tare_scale(values):
     """Called when an API request to tare a scale is received."""
     # Validate the session cookie.
@@ -550,20 +560,25 @@ def handle_api_tare_scale(values):
     db = connect_to_db()
 
     # Find the latest scale reading. If it is recent then we'll use that as the tare value.
-    ten_minutes_ago = time.time() - 600.0
-    recent_scale_readings = list(db.retrieve_keg_status(ten_minutes_ago))
-    if len(recent_scale_readings) == 0:
-        raise ApiMalformedRequestException("No scale readings within the last ten minutes.")
-    tare_value = recent_scale_readings[-1]["raw_value"]
+    scale_reading = latest_scale_reading(db)
+    raw_value = scale_reading["raw_value"]
 
     # Find the latest calibration record.
     cal_rec = self.db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
 
     # Update the calibration record.
     if bool(cal_rec):
-        self.db.create_scale_calibration(cal_rec[database.SCALE_NAME_KEY], tare_value, cal_rec[database.SCALE_CALIBRATION_VALUE_KEY], cal_rec[database.SCALE_CALIBRATION_WEIGHT_KEY])
+        self.db.create_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
+            raw_value,
+            cal_rec[database.SCALE_CALIBRATION_VALUE_KEY],
+            cal_rec[database.SCALE_CALIBRATION_WEIGHT_KEY],
+            cal_rec[database.SCALE_CALIBRATION_FULL_KEY])
     else:
-        self.db.update_scale_calibration(cal_rec[database.SCALE_NAME_KEY], tare_value, cal_rec[database.SCALE_CALIBRATION_VALUE_KEY], cal_rec[database.SCALE_CALIBRATION_WEIGHT_KEY])
+        self.db.update_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
+            raw_value,
+            cal_rec[database.SCALE_CALIBRATION_VALUE_KEY],
+            cal_rec[database.SCALE_CALIBRATION_WEIGHT_KEY],
+            cal_rec[database.SCALE_CALIBRATION_FULL_KEY])
 
     return True, ""
 
@@ -576,22 +591,59 @@ def handle_api_calibrate_scale(values):
     db = connect_to_db()
 
     # Find the latest scale reading. If it is recent then we'll use that as the calibration value.
-    ten_minutes_ago = time.time() - 600.0
-    recent_scale_readings = list(db.retrieve_keg_status(ten_minutes_ago))
-    if len(recent_scale_readings) == 0:
-        raise ApiMalformedRequestException("No scale readings within the last ten minutes.")
-    cal_value = recent_scale_readings[-1]["raw_value"]
+    scale_reading = latest_scale_reading(db)
+    raw_value = scale_reading["raw_value"]
+
+    # Find the latest calibration record.
+    cal_rec = self.db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
+
+    # Calibration weight.
+    cal_weight = values[database.SCALE_CALIBRATION_WEIGHT_KEY]
+
+    # Update the calibration record.
+    if bool(cal_rec):
+        self.db.create_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
+            cal_rec[database.SCALE_TARE_VALUE_KEY],
+            raw_value,
+            cal_weight,
+            cal_rec[database.SCALE_CALIBRATION_FULL_KEY])
+    else:
+        self.db.update_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
+            cal_rec[database.SCALE_TARE_VALUE_KEY],
+            raw_value,
+            cal_weight,
+            cal_rec[database.SCALE_CALIBRATION_FULL_KEY])
+
+    return True, ""
+
+def handle_api_full_scale(values):
+    """Called when an API request to denote the scale is "full" (i.e. max weight, or 100% of the expected weight) received."""
+    # Validate the session cookie.
+    _, _ = common_auth_check(values)
+
+    # Connect to the database.
+    db = connect_to_db()
+
+    # Find the latest scale reading. If it is recent then we'll use that as the "full" value.
+    scale_reading = latest_scale_reading(db)
+    raw_value = scale_reading["raw_value"]
 
     # Find the latest calibration record.
     cal_rec = self.db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
 
     # Update the calibration record.
     if bool(cal_rec):
-        self.db.create_scale_calibration(cal_rec[database.SCALE_NAME_KEY], cal_rec[database.SCALE_TARE_VALUE_KEY], cal_value, values[database.SCALE_CALIBRATION_WEIGHT_KEY])
+        self.db.create_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
+            cal_rec[database.SCALE_TARE_VALUE_KEY],
+            cal_rec[database.SCALE_CALIBRATION_VALUE_KEY],
+            cal_rec[database.SCALE_CALIBRATION_WEIGHT_KEY],
+            raw_value)
     else:
-        self.db.update_scale_calibration(cal_rec[database.SCALE_NAME_KEY], cal_rec[database.SCALE_TARE_VALUE_KEY], cal_value, values[database.SCALE_CALIBRATION_WEIGHT_KEY])
-
-    return True, ""
+        self.db.update_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
+            cal_rec[database.SCALE_TARE_VALUE_KEY],
+            cal_rec[database.SCALE_CALIBRATION_VALUE_KEY],
+            cal_rec[database.SCALE_CALIBRATION_WEIGHT_KEY],
+            raw_value)
 
 def handle_api_create_api_key(values):
     """Called when an API request to create an API key is received."""
@@ -627,6 +679,10 @@ def handle_api_list_api_keys(values):
 
 def handle_api_limits_request(values):
     """Called when an API request to list sensor limits is received."""
+    # Check for required parameters.
+    if PARAM_LIMITS_KEY not in values:
+        raise ApiAuthenticationException("Limits key not specified.")
+
     # Validate the session cookie.
     _, user = common_session_check(values)
 
@@ -634,7 +690,7 @@ def handle_api_limits_request(values):
     db = connect_to_db()
 
     # Query the database.
-    upper_limit, lower_limit = db.retrieve_sensor_limits(values["key"])
+    upper_limit, lower_limit = db.retrieve_sensor_limits(values[PARAM_LIMITS_KEY])
     result = { 'upper_limit': upper_limit, 'lower_limit': lower_limit }
 
     return True, result
@@ -689,6 +745,8 @@ def handle_api_1_0_post_request(request, values):
         return handle_api_tare_scale(values)
     if request == 'calibrate_scale':
         return handle_api_calibrate_scale(values)
+    if request == 'full_scale':
+        return handle_api_full_scale(values)
     if request == 'create_api_key':
         return handle_api_create_api_key(values)
     if request == 'create_limits':
