@@ -796,7 +796,7 @@ def api(version, method):
             else:
                 code = 400
         else:
-            code = 400
+            code = 404
     except:
         log_error(traceback.format_exc())
         log_error(sys.exc_info()[0])
