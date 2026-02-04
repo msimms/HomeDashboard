@@ -250,7 +250,13 @@
             return;
         }
 
-        let api_url = "${root_url}/api/1.0/limits?key=" + key + "&session_cookie=" + get_session_cookie();
+        // If we're not logged in then we won't get the alarm limits.
+        session_cookie = get_session_cookie();
+        if (session_cookie == null) {
+            return;
+        }
+
+        let api_url = "${root_url}/api/1.0/limits?key=" + key + "&session_cookie=" + session_cookie;
 
         send_get_request_async(api_url, function (response_code, response_text) {
             if (response_code == 200) {
