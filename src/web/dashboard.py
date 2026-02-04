@@ -561,7 +561,7 @@ def handle_api_tare_scale(values):
 
     # Find the latest scale reading. If it is recent then we'll use that as the tare value.
     scale_reading = latest_scale_reading(db)
-    raw_value = scale_reading["raw_value"]
+    raw_value = scale_reading[database.SCALE_RAW_VALUE_KEY]
 
     # Find the latest calibration record.
     cal_rec = self.db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
@@ -592,7 +592,7 @@ def handle_api_calibrate_scale(values):
 
     # Find the latest scale reading. If it is recent then we'll use that as the calibration value.
     scale_reading = latest_scale_reading(db)
-    raw_value = scale_reading["raw_value"]
+    raw_value = scale_reading[database.SCALE_RAW_VALUE_KEY]
 
     # Find the latest calibration record.
     cal_rec = self.db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
@@ -626,7 +626,7 @@ def handle_api_full_scale(values):
 
     # Find the latest scale reading. If it is recent then we'll use that as the "full" value.
     scale_reading = latest_scale_reading(db)
-    raw_value = scale_reading["raw_value"]
+    raw_value = scale_reading[database.SCALE_RAW_VALUE_KEY]
 
     # Find the latest calibration record.
     cal_rec = self.db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])

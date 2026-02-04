@@ -48,6 +48,7 @@ SCALE_TARE_VALUE_KEY = "tare_value"
 SCALE_CALIBRATION_VALUE_KEY = "calibration_value"
 SCALE_CALIBRATION_WEIGHT_KEY = "calibration_weight"
 SCALE_FULL_VALUE_KEY = "full_value"
+SCALE_RAW_VALUE_KEY = "raw_value"
 
 # Collection names.
 COLLECTION_USERS = "users"

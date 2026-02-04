@@ -41,6 +41,36 @@
 Adafruit_SSD1306 g_display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 ArduinoLEDMatrix g_matrix;  // Create an instance of the ArduinoLEDMatrix class
 
+const char* root_ca = "-----BEGIN CERTIFICATE-----\n" \
+"MIIFDDCCA/SgAwIBAgISBrQgjMVpB4hBPRJWo3hg/p5KMA0GCSqGSIb3DQEBCwUA\n" \
+"MDMxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MQwwCgYDVQQD\n" \
+"EwNSMTMwHhcNMjYwMjAzMjEyNDAyWhcNMjYwNTA0MjEyNDAxWjAfMR0wGwYDVQQD\n" \
+"ExRzdGF0dXMubWlrZXNpbW1zLm5ldDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCC\n" \
+"AQoCggEBALT2u3aNO82EOdc06VWLHk+NC8d6pueOC9gI9GHkXYmMAfSOTFggMcP7\n" \
+"VyzxWX3fROtJkHd7dju87Ifa3iiGHevFk06vHkom0LsCthr2KfEzRuZWtmTLkUFS\n" \
+"pSm9P29I2ZZL9pJgeu5uyyxBctxuZKhJl8wSiNJfJoPOnL3PNFmdPSk0ZzCxZqKa\n" \
+"1YsHPZZaDVTJHTibBZHj4XJQckhYrF+GVOS4Wb5SSVBBtjJuE8UgFbWE5K/rJwSK\n" \
+"j54BFzvysO+by9apNEXbELCC9MigXb/3s4ZeyKmbJZAzyao9AfWr2e6nlQKxAuVB\n" \
+"l8g+iMS/XkhXgXRmMfes+K5sQw8stukCAwEAAaOCAiwwggIoMA4GA1UdDwEB/wQE\n" \
+"AwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDAYDVR0TAQH/BAIw\n" \
+"ADAdBgNVHQ4EFgQUOy2fYiQ1iOZwzDIjxRc4yWIc9JEwHwYDVR0jBBgwFoAU56uf\n" \
+"DywzoFPTXk94yLKEDjvWkjMwMwYIKwYBBQUHAQEEJzAlMCMGCCsGAQUFBzAChhdo\n" \
+"dHRwOi8vcjEzLmkubGVuY3Iub3JnLzAfBgNVHREEGDAWghRzdGF0dXMubWlrZXNp\n" \
+"bW1zLm5ldDATBgNVHSAEDDAKMAgGBmeBDAECATAuBgNVHR8EJzAlMCOgIaAfhh1o\n" \
+"dHRwOi8vcjEzLmMubGVuY3Iub3JnLzc1LmNybDCCAQwGCisGAQQB1nkCBAIEgf0E\n" \
+"gfoA+AB2AA5XlLzzrqk+MxssmQez95Dfm8I9cTIl3SGpJaxhxU4hAAABnCWZpdwA\n" \
+"AAQDAEcwRQIhAMRSCuigNSfsqgD23TAITuA+aVQ6UeTpxopFg005CWPPAiAR8qzL\n" \
+"l2BJ4nUFHw/MxwDlqXYwzuRYUPzbqju2rbtKtAB+AOMjjfKNoojgquCs8PqQyYXw\n" \
+"tr/10qUnsAH8HERYxLboAAABnCWZpksACAAABQAxadtUBAMARzBFAiAO+bJcQu8R\n" \
+"N4MduwGNy9y0l9OnLwP5IAM98j47Rgt3BQIhAK8/3KPvfiY/EMq3I45BbEDvpznj\n" \
+"ZAvUy1uAETzp4DfiMA0GCSqGSIb3DQEBCwUAA4IBAQBzGPDk/T0/jsNku8+quxRp\n" \
+"SwbNDl2GcqRMGOJJWV3grtmii8UgTr2FL0hTNBPH2e2wQYe9utZwID9j9km/fQaD\n" \
+"pT94eacs5Ff/YIUGk7cA/pdLj8m9yH2YP2ysf18Ak09/CFfoCqS1EIYxTk40N8Nj\n" \
+"W1pwgnQo7DU6n99FZd/p3npXLiXeh3/z/U6oqWBDxKjm4iOBOMPFx2MF5BlUQpmO\n" \
+"NXCH2lhul1sIw5Mtcq9YQYRQ+nLoSvRgM+TPw4MGcdwb5k4e1IKzPlx7jbDzR5kl\n" \
+"2HnS5TW67hheyf8ddzSyfkwuWNItRLWjOY1qWPFxfrCh63+UGmW7Wb/vic10URO9\n" \
+"-----END CERTIFICATE-----\n";
+
 // The "pin" for the onboard LED.
 int LED = 13;
 
@@ -146,38 +176,87 @@ void print_wifi_status() {
 /// @function post_status
 void post_status(String str) {
 
-  // Attempt to connect to Wi-Fi network:
-  Serial.println("[INFO] Connecting to WiFi...");
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.print("[INFO] Attempting to connect to the network: ");
-    Serial.println(SECRET_SSID);
-    int wifi_status = WiFi.begin(SECRET_SSID, SECRET_PASS);
-
-    // Wait a few seconds for connection.
-    delay(5000);
+  String fv = WiFi.firmwareVersion();
+  if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
+    Serial.println("Upgrade the firmware!");
   }
 
-  // Network is connected....
-  Serial.println("[INFO] Wifi connected!");
-  WiFiSSLClient ssl; // TLS socket
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("[INFO] Connecting to WiFi...");
+    Serial.print("[INFO] SSID: ");
+    Serial.println(SECRET_SSID);
+
+    WiFi.begin(SECRET_SSID, SECRET_PASS);
+
+    unsigned long t0 = millis();
+    while (WiFi.status() != WL_CONNECTED && (millis() - t0) < 15000) {
+      delay(250);
+      Serial.print(".");
+    }
+    Serial.println();
+  }
+  else {
+    Serial.println("[INFO] Already connected to WiFi!");
+  }
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("[ERROR] WiFi not connected (timeout).");
+    Serial.println(WiFi.status());
+    return;
+  }
+
+  Serial.println("[INFO] WiFi connected!");
+  Serial.print("[INFO] IP: ");
+  Serial.println(WiFi.localIP());
+
+  WiFiSSLClient ssl;
+  //ssl.setCACert(root_ca);
+  ssl.setTimeout(15000); // keep things from hanging forever
+
+  Serial.println("[INFO] TLS connect...");
+  int ok = ssl.connect(STATUS_URL, STATUS_PORT);
+  if (ok != 1) {
+    Serial.print("[ERROR] TLS connect failed. ssl.connect = ");
+    Serial.println(ok);
+    ssl.stop();
+    return;
+  }
 
   HttpClient http(ssl, STATUS_URL, STATUS_PORT);
+  http.setTimeout(15000);
+
+  Serial.println("[INFO] Beginning HTTPS POST...");
+
   http.beginRequest();
-  http.post("/api/1.0/update_status");
+
+  int rc = http.post("/api/1.0/update_status");
+  Serial.print("[INFO] post() return code: ");
+  Serial.println(rc);
+
+  if (rc != 0) {
+    Serial.println("[ERROR] HTTP POST start failed!");
+    http.stop();
+    ssl.stop();
+    return;
+  }
+
   http.sendHeader("Content-Type", "application/json");
   http.sendHeader("Content-Length", str.length());
-  http.sendHeader("Connection: close\r\n");
+  http.sendHeader("Connection", "close");
   http.beginBody();
   http.print(str);
-  http.print("\r\n"); // end of headers
   http.endRequest();
 
   int status = http.responseStatusCode();
+  Serial.print("[INFO] HTTP status: ");
+  Serial.println(status);
+
   String body = http.responseBody();
-  Serial.print("[INFO] Status: "); Serial.println(status);
+  Serial.println("[INFO] Response body:");
   Serial.println(body);
 
-  WiFi.end();
+  http.stop();
+  ssl.stop();
 }
 
 /// @function float_is_valid
@@ -447,7 +526,7 @@ void setup() {
   // Initialize the scale.
   setup_scale();
 
-  // Initialize the UNO R4's built-in display
+  // Initialize the UNO R4's built-in display.
   g_matrix.begin();
   g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
 
@@ -530,7 +609,7 @@ void loop() {
       update_display("No cmd!");
     }
 
-    // A request to compute a new tare value was received..
+    // A request to compute a new tare value was received.
     else if (received_char == 'T') {
 
       // Update the LCD screen.
@@ -591,18 +670,14 @@ void loop() {
   }
 
   // Format the output.
-  char buff[800];
-  snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"keg\", \"api_key\": \"%s\", \"keg\": %f}", API_KEY, raw_value);
+  char buff[700];
+  snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"keg\", \"api_key\": \"%s\", \"raw_value\": %f}", API_KEY, raw_value);
   Serial.println(buff);
 
   // Send.
   post_status(buff);
 
   // Wait a few seconds (so people can read the display) and then go into deep sleep.
-  delay(10000);
-  g_hx711_1.power_down();
-  g_hx711_2.power_down();
-  g_hx711_3.power_down();
-  g_hx711_4.power_down();
-  asm volatile("wfi");
+  delay(60000);
+  //asm volatile("wfi");
 }
