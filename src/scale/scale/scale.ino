@@ -23,6 +23,8 @@
 #include <SPI.h>
 #include <Adafruit_SSD1306.h>
 #include <HX711.h>
+#include <NTPClient.h>
+#include <RTC.h>
 #include <Wire.h>
 #include <WiFiS3.h>
 #include <ArduinoHttpClient.h>
@@ -40,36 +42,6 @@
 #define SCREEN_ADDRESS 0x3C // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 g_display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 ArduinoLEDMatrix g_matrix;  // Create an instance of the ArduinoLEDMatrix class
-
-const char* root_ca = "-----BEGIN CERTIFICATE-----\n" \
-"MIIFDDCCA/SgAwIBAgISBrQgjMVpB4hBPRJWo3hg/p5KMA0GCSqGSIb3DQEBCwUA\n" \
-"MDMxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MQwwCgYDVQQD\n" \
-"EwNSMTMwHhcNMjYwMjAzMjEyNDAyWhcNMjYwNTA0MjEyNDAxWjAfMR0wGwYDVQQD\n" \
-"ExRzdGF0dXMubWlrZXNpbW1zLm5ldDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCC\n" \
-"AQoCggEBALT2u3aNO82EOdc06VWLHk+NC8d6pueOC9gI9GHkXYmMAfSOTFggMcP7\n" \
-"VyzxWX3fROtJkHd7dju87Ifa3iiGHevFk06vHkom0LsCthr2KfEzRuZWtmTLkUFS\n" \
-"pSm9P29I2ZZL9pJgeu5uyyxBctxuZKhJl8wSiNJfJoPOnL3PNFmdPSk0ZzCxZqKa\n" \
-"1YsHPZZaDVTJHTibBZHj4XJQckhYrF+GVOS4Wb5SSVBBtjJuE8UgFbWE5K/rJwSK\n" \
-"j54BFzvysO+by9apNEXbELCC9MigXb/3s4ZeyKmbJZAzyao9AfWr2e6nlQKxAuVB\n" \
-"l8g+iMS/XkhXgXRmMfes+K5sQw8stukCAwEAAaOCAiwwggIoMA4GA1UdDwEB/wQE\n" \
-"AwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDAYDVR0TAQH/BAIw\n" \
-"ADAdBgNVHQ4EFgQUOy2fYiQ1iOZwzDIjxRc4yWIc9JEwHwYDVR0jBBgwFoAU56uf\n" \
-"DywzoFPTXk94yLKEDjvWkjMwMwYIKwYBBQUHAQEEJzAlMCMGCCsGAQUFBzAChhdo\n" \
-"dHRwOi8vcjEzLmkubGVuY3Iub3JnLzAfBgNVHREEGDAWghRzdGF0dXMubWlrZXNp\n" \
-"bW1zLm5ldDATBgNVHSAEDDAKMAgGBmeBDAECATAuBgNVHR8EJzAlMCOgIaAfhh1o\n" \
-"dHRwOi8vcjEzLmMubGVuY3Iub3JnLzc1LmNybDCCAQwGCisGAQQB1nkCBAIEgf0E\n" \
-"gfoA+AB2AA5XlLzzrqk+MxssmQez95Dfm8I9cTIl3SGpJaxhxU4hAAABnCWZpdwA\n" \
-"AAQDAEcwRQIhAMRSCuigNSfsqgD23TAITuA+aVQ6UeTpxopFg005CWPPAiAR8qzL\n" \
-"l2BJ4nUFHw/MxwDlqXYwzuRYUPzbqju2rbtKtAB+AOMjjfKNoojgquCs8PqQyYXw\n" \
-"tr/10qUnsAH8HERYxLboAAABnCWZpksACAAABQAxadtUBAMARzBFAiAO+bJcQu8R\n" \
-"N4MduwGNy9y0l9OnLwP5IAM98j47Rgt3BQIhAK8/3KPvfiY/EMq3I45BbEDvpznj\n" \
-"ZAvUy1uAETzp4DfiMA0GCSqGSIb3DQEBCwUAA4IBAQBzGPDk/T0/jsNku8+quxRp\n" \
-"SwbNDl2GcqRMGOJJWV3grtmii8UgTr2FL0hTNBPH2e2wQYe9utZwID9j9km/fQaD\n" \
-"pT94eacs5Ff/YIUGk7cA/pdLj8m9yH2YP2ysf18Ak09/CFfoCqS1EIYxTk40N8Nj\n" \
-"W1pwgnQo7DU6n99FZd/p3npXLiXeh3/z/U6oqWBDxKjm4iOBOMPFx2MF5BlUQpmO\n" \
-"NXCH2lhul1sIw5Mtcq9YQYRQ+nLoSvRgM+TPw4MGcdwb5k4e1IKzPlx7jbDzR5kl\n" \
-"2HnS5TW67hheyf8ddzSyfkwuWNItRLWjOY1qWPFxfrCh63+UGmW7Wb/vic10URO9\n" \
-"-----END CERTIFICATE-----\n";
 
 // The "pin" for the onboard LED.
 int LED = 13;
@@ -113,14 +85,14 @@ static const unsigned char PROGMEM g_logo_bmp[] =
   0x00, 0x00, 0x00, 0x00 };
   
 // HX711 circuit wiring for three load cells.
-const int LOADCELL1_DOUT_PIN = 2;
-const int LOADCELL1_SCK_PIN = 3;
-const int LOADCELL2_DOUT_PIN = 4;
-const int LOADCELL2_SCK_PIN = 5;
-const int LOADCELL3_DOUT_PIN = 6;
-const int LOADCELL3_SCK_PIN = 7;
-const int LOADCELL4_DOUT_PIN = 8;
-const int LOADCELL4_SCK_PIN = 9;
+const int LOADCELL1_DOUT_PIN = 4;
+const int LOADCELL1_SCK_PIN = 5;
+const int LOADCELL2_DOUT_PIN = 6;
+const int LOADCELL2_SCK_PIN = 7;
+const int LOADCELL3_DOUT_PIN = 8;
+const int LOADCELL3_SCK_PIN = 9;
+const int LOADCELL4_DOUT_PIN = 10;
+const int LOADCELL4_SCK_PIN = 11;
 
 // HX711 objects.
 HX711 g_hx711_1;
@@ -144,13 +116,54 @@ float g_calibration_weight = 0.0;
 bool g_tare_set = false;
 bool g_cal_set = false;
 
+// SSL
+WiFiSSLClient g_ssl;
+
+// NTP
+WiFiUDP g_udp;
+NTPClient g_time_client(g_udp, "pool.ntp.org", 0, 60000); // Update every 60s
+
 /// @function setup_wifi
 void setup_wifi() {
+
+  // Check the firmware version.
+  String fv = WiFi.firmwareVersion();
+  if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
+    Serial.println("[INFO] Upgrade the firmware!");
+  }
 
   // Make sure we were given a network to connect to.
   if (strlen(SECRET_SSID) == 0) {
     Serial.println("[ERROR] SSID not specified!");
     return;
+  }
+
+  // (Re)connect to Wifi.
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("[INFO] Connecting to WiFi...");
+    Serial.print("[INFO] SSID: ");
+    Serial.println(SECRET_SSID);
+
+    WiFi.begin(SECRET_SSID, SECRET_PASS);
+
+    unsigned long t0 = millis();
+    while (WiFi.status() != WL_CONNECTED && (millis() - t0) < 15000) {
+      delay(250);
+      Serial.print(".");
+    }
+    Serial.println();
+
+    Serial.println("[INFO] Syncing time...");
+    g_time_client.begin();
+    g_time_client.update();
+    unsigned long epoch_time = g_time_client.getEpochTime();
+    RTCTime rtc_time(epoch_time);
+    RTC.setTime(rtc_time);
+
+    Serial.println("[INFO] RTC synced with NTP!");
+  }
+  else {
+    Serial.println("[INFO] Already connected to WiFi!");
   }
 }
 
@@ -168,7 +181,7 @@ void print_wifi_status() {
 
   // Print the received signal strength.
   long rssi = WiFi.RSSI();
-  Serial.print("[INFO] Signal strength (RSSI):");
+  Serial.print("[INFO] Signal strength (RSSI): ");
   Serial.print(rssi);
   Serial.println(" dBm");
 }
@@ -176,87 +189,90 @@ void print_wifi_status() {
 /// @function post_status
 void post_status(String str) {
 
-  String fv = WiFi.firmwareVersion();
-  if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
-    Serial.println("Upgrade the firmware!");
-  }
+  // (Re)connect to Wifi.
+  setup_wifi();
 
+  // Are we connected?
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("[INFO] Connecting to WiFi...");
-    Serial.print("[INFO] SSID: ");
-    Serial.println(SECRET_SSID);
-
-    WiFi.begin(SECRET_SSID, SECRET_PASS);
-
-    unsigned long t0 = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis() - t0) < 15000) {
-      delay(250);
-      Serial.print(".");
-    }
-    Serial.println();
-  }
-  else {
-    Serial.println("[INFO] Already connected to WiFi!");
-  }
-
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("[ERROR] WiFi not connected (timeout).");
+    Serial.println("[ERROR] WiFi not connected.");
     Serial.println(WiFi.status());
     return;
   }
 
+  // Did we get an IP address from the DHCP server?
   Serial.println("[INFO] WiFi connected!");
   Serial.print("[INFO] IP: ");
   Serial.println(WiFi.localIP());
 
-  WiFiSSLClient ssl;
-  //ssl.setCACert(root_ca);
-  ssl.setTimeout(15000); // keep things from hanging forever
+  // Sync time.
+  Serial.println("[INFO] Updating the time...");
+  RTCTime saved_time;
+  RTC.getTime(saved_time);
 
+  // Print time.
+  RTCTime current_time;
+  RTC.getTime(current_time);
+  Serial.print("[INFO] Current time: ");
+  Serial.println(String(current_time.getHour()) + ":" + String(current_time.getMinutes()) + ":" + String(current_time.getSeconds()));
+
+  // Update the root certificate, because the one we need isn't in the default set.
+  g_ssl.setCACert(root_ca);
+  g_ssl.setTimeout(15000); // keep things from hanging forever
+
+  // Connect.
   Serial.println("[INFO] TLS connect...");
-  int ok = ssl.connect(STATUS_URL, STATUS_PORT);
+  int ok = g_ssl.connect(STATUS_URL, STATUS_PORT);
   if (ok != 1) {
-    Serial.print("[ERROR] TLS connect failed. ssl.connect = ");
+    Serial.print("[ERROR] TLS connect failed. g_ssl.connect = ");
     Serial.println(ok);
-    ssl.stop();
+    g_ssl.stop();
     return;
   }
 
-  HttpClient http(ssl, STATUS_URL, STATUS_PORT);
+  // Start an HTTP session.
+  HttpClient http(g_ssl, STATUS_URL, STATUS_PORT);
   http.setTimeout(15000);
-
   Serial.println("[INFO] Beginning HTTPS POST...");
-
   http.beginRequest();
 
+  // Start POST.
   int rc = http.post("/api/1.0/update_status");
   Serial.print("[INFO] post() return code: ");
   Serial.println(rc);
-
   if (rc != 0) {
     Serial.println("[ERROR] HTTP POST start failed!");
     http.stop();
-    ssl.stop();
+    g_ssl.stop();
     return;
   }
 
+  int len = str.length();
+  Serial.print("[INFO] Sending ");
+  Serial.print(len);
+  Serial.println(" bytes");
+
+  // Send the headers.
   http.sendHeader("Content-Type", "application/json");
-  http.sendHeader("Content-Length", str.length());
+  http.sendHeader("Content-Length", len);
   http.sendHeader("Connection", "close");
+
+  // Send the body.
   http.beginBody();
   http.print(str);
   http.endRequest();
 
+  // Read the response code.
   int status = http.responseStatusCode();
   Serial.print("[INFO] HTTP status: ");
   Serial.println(status);
 
+  // Read the response body.
   String body = http.responseBody();
   Serial.println("[INFO] Response body:");
   Serial.println(body);
 
   http.stop();
-  ssl.stop();
+  g_ssl.stop();
 }
 
 /// @function float_is_valid
@@ -517,6 +533,9 @@ void setup() {
     delay(100);
   }
 
+  // Start the real time clock.
+  RTC.begin();
+
   // Initialize the I2C interface.
   Wire.begin();
 
@@ -532,6 +551,7 @@ void setup() {
 
   // Connect to the wifi network.
   setup_wifi();
+  print_wifi_status();
 }
 
 /// @function loop
