@@ -146,6 +146,7 @@ void setup_wifi() {
 
     WiFi.begin(SECRET_SSID, SECRET_PASS);
 
+    // Wait until we're connected.
     unsigned long t0 = millis();
     while (WiFi.status() != WL_CONNECTED && (millis() - t0) < 15000) {
       delay(250);
@@ -153,6 +154,7 @@ void setup_wifi() {
     }
     Serial.println();
 
+    // Sync RTC.
     Serial.println("[INFO] Syncing time...");
     g_time_client.begin();
     g_time_client.update();
@@ -204,19 +206,14 @@ void post_status(String str) {
   Serial.print("[INFO] IP: ");
   Serial.println(WiFi.localIP());
 
-  // Sync time.
-  Serial.println("[INFO] Updating the time...");
-  RTCTime saved_time;
-  RTC.getTime(saved_time);
-
-  // Print time.
+  // Print the time.
   RTCTime current_time;
   RTC.getTime(current_time);
   Serial.print("[INFO] Current time: ");
   Serial.println(String(current_time.getHour()) + ":" + String(current_time.getMinutes()) + ":" + String(current_time.getSeconds()));
 
   // Update the root certificate, because the one we need isn't in the default set.
-  g_ssl.setCACert(root_ca);
+//  g_ssl.setCACert(root_ca);
   g_ssl.setTimeout(15000); // keep things from hanging forever
 
   // Connect.
@@ -233,33 +230,17 @@ void post_status(String str) {
   HttpClient http(g_ssl, STATUS_URL, STATUS_PORT);
   http.setTimeout(15000);
   Serial.println("[INFO] Beginning HTTPS POST...");
-  http.beginRequest();
 
   // Start POST.
-  int rc = http.post("/api/1.0/update_status");
+  int rc = http.post("/api/1.0/update_status", "application/json", str);
   Serial.print("[INFO] post() return code: ");
   Serial.println(rc);
   if (rc != 0) {
-    Serial.println("[ERROR] HTTP POST start failed!");
+    Serial.println("[ERROR] HTTP POST failed!");
     http.stop();
     g_ssl.stop();
     return;
   }
-
-  int len = str.length();
-  Serial.print("[INFO] Sending ");
-  Serial.print(len);
-  Serial.println(" bytes");
-
-  // Send the headers.
-  http.sendHeader("Content-Type", "application/json");
-  http.sendHeader("Content-Length", len);
-  http.sendHeader("Connection", "close");
-
-  // Send the body.
-  http.beginBody();
-  http.print(str);
-  http.endRequest();
 
   // Read the response code.
   int status = http.responseStatusCode();
