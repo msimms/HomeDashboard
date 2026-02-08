@@ -7,7 +7,9 @@ import SwiftUI
 
 @main
 struct DashboardAppApp: App {
-    var body: some Scene {
+	var serverVM: ServerVM = ServerVM.shared
+
+	var body: some Scene {
         WindowGroup {
             ContentView()
         }

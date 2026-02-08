@@ -60,6 +60,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		277C10352F39056D002B0303 /* Exceptions for "DashboardApp" folder in "DashboardWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				APIClient.swift,
+			);
+			target = 27C84F6D2F37FC610068817A /* DashboardWidgetExtension */;
+		};
 		27C84F852F37FC620068817A /* Exceptions for "DashboardWidget" folder in "DashboardWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -72,6 +79,9 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		27C84F422F37FADA0068817A /* DashboardApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				277C10352F39056D002B0303 /* Exceptions for "DashboardApp" folder in "DashboardWidgetExtension" target */,
+			);
 			path = DashboardApp;
 			sourceTree = "<group>";
 		};
