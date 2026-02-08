@@ -57,6 +57,7 @@ IMAGES_DIR = 'images'
 HTML_DIR = 'html'
 
 START_TS = 'start_ts'
+LATEST = 'latest'
 MIN_PASSWORD_LEN  = 8
 SESSION_COOKIE = 'session_cookie'
 
@@ -359,22 +360,30 @@ def index():
 
 def handle_api_indoor_air_request(values):
     """Called when an API request for the indoor air status data is received."""
-    start_ts = 0
-    if START_TS in values:
-        start_ts = int(float(values[START_TS]))
     db = connect_to_db()
-    readings = list(db.retrieve_air_quality(start_ts))
-    result = json.dumps(readings)
+    if LATEST in values:
+        readings = db.retrieve_latest_air_quality()
+        result = json.dumps(readings)
+    else:
+        start_ts = 0
+        if START_TS in values:
+            start_ts = int(float(values[START_TS]))
+        readings = list(db.retrieve_air_quality(start_ts))
+        result = json.dumps(readings)
     return True, result
 
 def handle_api_patio_request(values):
     """Called when an API request for the patio status is received."""
-    start_ts = 0
-    if START_TS in values:
-        start_ts = int(float(values[START_TS]))
     db = connect_to_db()
-    readings = list(db.retrieve_patio_status(start_ts))
-    result = json.dumps(readings)
+    if LATEST in values:
+        readings = db.retrieve_latest_patio_status()
+        result = json.dumps(readings)
+    else:
+        start_ts = 0
+        if START_TS in values:
+            start_ts = int(float(values[START_TS]))
+        readings = list(db.retrieve_patio_status(start_ts))
+        result = json.dumps(readings)
     return True, result
 
 def handle_api_ac_request(values):

@@ -519,6 +519,15 @@ class AppMongoDatabase(Database):
             self.log_error(sys.exc_info()[0])
         return []
 
+    def retrieve_latest_air_quality(self):
+        """Retrieve method for the latest air quality measurement."""
+        try:
+            return self.indoor_air_quality.find({}, { "_id": 0 }).sort('_id', -1).limit(1).next()
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return []
+
     #
     # Patio monitor methods
     #
@@ -530,6 +539,15 @@ class AppMongoDatabase(Database):
             if min_ts > 0:
                 filter = { "ts": { "$gt": min_ts } }
             return self.patio_monitor.find(filter, {"_id": 0})
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return []
+
+    def retrieve_latest_patio_status(self, min_ts):
+        """Retrieve method for the latest patio monitor measurement."""
+        try:
+            return self.patio_monitor.find({}, { "_id": 0 }).sort('_id', -1).limit(1).next()
         except:
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
