@@ -11,10 +11,8 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
     static var description: IntentDescription { "This is an example widget." }
 
     // An example configurable parameter.
-	@Parameter(title: "Attribute", default: "")
-	var attribute: String
-	@Parameter(title: "Value", default: 0)
-	var value: Int
-	@Parameter(title: "Units", default: "")
-	var units: String
+	@Parameter(title: "", default: "")
+	var attribute1: String
+	@Parameter(title: "", default: "")
+	var attribute2: String
 }

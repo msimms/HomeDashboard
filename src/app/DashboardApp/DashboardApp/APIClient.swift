@@ -23,6 +23,22 @@ struct IndoorData: Decodable {
 	}
 }
 
+struct PatioData: Decodable {
+	let temp_c: Float
+	let humidity: Float
+	let moisture_sensor_1: Float
+	let moisture_sensor_2: Float
+	let ts: Float
+
+	enum CodingKeys: String, CodingKey {
+		case temp_c
+		case humidity
+		case moisture_sensor_1
+		case moisture_sensor_2
+		case ts
+	}
+}
+
 enum APIError: Error { case badURL, badResponse }
 
 struct APIClient {
@@ -35,5 +51,16 @@ struct APIClient {
 			throw APIError.badResponse
 		}
 		return try JSONDecoder().decode(IndoorData.self, from: data)
+	}
+
+	static func fetchPatioStatus() async throws -> PatioData {
+		guard let url = URL(string: "https://status.mikesimms.net/api/1.0/patio?latest") else {
+			throw APIError.badURL
+		}
+		let (data, response) = try await URLSession.shared.data(from: url)
+		guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+			throw APIError.badResponse
+		}
+		return try JSONDecoder().decode(PatioData.self, from: data)
 	}
 }

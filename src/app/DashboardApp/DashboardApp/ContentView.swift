@@ -9,7 +9,7 @@ struct ContentView: View {
 	@ObservedObject var serverVM: ServerVM = ServerVM.shared
 
 	var body: some View {
-        VStack {
+		VStack(alignment: .center) {
 
 			// Indoor Air Quality
 			Image(systemName: "house")
@@ -18,23 +18,17 @@ struct ContentView: View {
 			VStack() {
 				HStack() {
 					if let value = self.serverVM.indoorCo2ppm {
-						Text("CO\u{00B2}")
-						Text(String(format: "%u", value))
-						Text("ppm")
+						Text(String(format: "CO\u{00B2} %u ppm", value))
 					}
 				}
 				HStack() {
 					if let value = self.serverVM.indoorTempC {
-						Text("Temperature")
-						Text(String(format: "%.2f", value))
-						Text("\u{00B0}C")
+						Text(String(format: "Temperature %.2f \u{00B0}C", value))
 					}
 				}
 				HStack() {
 					if let value = self.serverVM.indoorHumidity {
-						Text("Humidity")
-						Text(String(format: "%.2f", value))
-						Text("%")
+						Text(String(format: "Humidity %.2f %%", value))
 					}
 				}
 			}
@@ -47,22 +41,28 @@ struct ContentView: View {
 			VStack() {
 				HStack() {
 					if let value = self.serverVM.outdoorTempC {
-						Text("Temperature")
-						Text(String(format: "%.2f", value))
-						Text("\u{00B0}C")
+						Text(String(format: "Temperature %.2f \u{00B0}C", value))
 					}
 				}
 				HStack() {
-					if let value = self.serverVM.outdoorHumidityC {
-						Text("Humidity")
-						Text(String(format: "%.2f", value))
-						Text("%")
+					if let value = self.serverVM.outdoorHumidity {
+						Text(String(format: "Humidity %.2f %%", value))
 					}
 				}
 			}
 			.padding(10)
-        }
+		}
         .padding()
+		.opacity(0.8)
+		.background(
+			Image("Image")
+				.resizable()
+				.edgesIgnoringSafeArea(.all)
+				.scaledToFit()
+				.opacity(0.7)
+				.onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+				}
+		)
     }
 }
 

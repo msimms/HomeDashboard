@@ -10,7 +10,9 @@ struct Provider: AppIntentTimelineProvider {
 
 	// Static preview data.
 	func placeholder(in context: Context) -> StatusEntry {
-		StatusEntry(date: Date(), configuration: ConfigurationAppIntent())
+		let configuration = ConfigurationAppIntent()
+		configuration.attribute1 = "Temp 25 C"
+		return StatusEntry(date: Date(), configuration: configuration)
 	}
 
 	// Quick snapshot for the gallery.
@@ -22,17 +24,15 @@ struct Provider: AppIntentTimelineProvider {
 	func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<StatusEntry> {
 		var entries: [StatusEntry] = []
 
-		// Generate a timeline consisting of five entries an hour apart,
-		// starting from the current date.
 		do {
 			let item = try await APIClient.fetchIndoorStatus()
-			let intent = ConfigurationAppIntent()
-			intent.attribute = "CO2"
-			intent.value = item.co2_ppm;
-			intent.units = "ppm"
-
 			let currentDate = Date()
 			let entryDate = Calendar.current.date(byAdding: .hour, value: 0, to: currentDate)!
+
+			let intent = ConfigurationAppIntent()
+			intent.attribute1 = String(format: "CO\u{00B2} %u ppm", item.co2_ppm)
+			intent.attribute2 = String(format: "Temp %.2f \u{00B0}C", item.temp_c)
+
 			let entry = StatusEntry(date: entryDate, configuration: intent)
 			entries.append(entry)
 		}
@@ -54,10 +54,9 @@ struct DashboardWidgetEntryView : View {
     var body: some View {
 		VStack {
 			Text(self.entry.date, style: .time)
-			HStack {
-				Text(self.entry.configuration.attribute)
-				Text(String(self.entry.configuration.value))
-				Text(self.entry.configuration.units)
+			VStack {
+				Text(self.entry.configuration.attribute1)
+				Text(self.entry.configuration.attribute2)
 			}
 		}
 	}
@@ -78,17 +77,7 @@ struct DashboardWidget: Widget {
 extension ConfigurationAppIntent {
 	fileprivate static var co2: ConfigurationAppIntent {
 		let intent = ConfigurationAppIntent()
-		intent.attribute = "CO2"
-		intent.value = 800;
-		intent.units = "ppm"
-		return intent
-	}
-
-	fileprivate static var temp: ConfigurationAppIntent {
-		let intent = ConfigurationAppIntent()
-		intent.attribute = "Temp"
-		intent.value = 35;
-		intent.units = "C"
+		intent.attribute1 = String(format: "CO\u{00B2} 800 ppm")
 		return intent
 	}
 }
@@ -97,5 +86,4 @@ extension ConfigurationAppIntent {
 	DashboardWidget()
 } timeline: {
 	StatusEntry(date: .now, configuration: .co2)
-	StatusEntry(date: .now, configuration: .temp)
 }

@@ -13,7 +13,7 @@ class ServerVM : ObservableObject {
 	@Published var indoorTempC: Float?
 	@Published var indoorHumidity: Float?
 	@Published var outdoorTempC: Float?
-	@Published var outdoorHumidityC: Float?
+	@Published var outdoorHumidity: Float?
 
 	private init() {
 		self.update()
@@ -31,6 +31,17 @@ class ServerVM : ObservableObject {
 
 			} catch {
 				// Handle error as needed, e.g., log or update state
+			}
+		}
+
+		Task { @MainActor in
+			do {
+				let item = try await APIClient.fetchPatioStatus()
+
+				// Update published properties with decoded values
+				self.outdoorTempC = item.temp_c
+				self.outdoorHumidity = item.humidity
+			} catch {
 			}
 		}
 	}
