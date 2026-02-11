@@ -11,6 +11,20 @@ struct ContentView: View {
 	var body: some View {
 		VStack(alignment: .center) {
 
+			HStack() {
+				Spacer()
+			}
+
+			// Indoor Air Quality
+			Image(systemName: "clock")
+				.imageScale(.large)
+				.foregroundStyle(.tint)
+			VStack() {
+				if let value = self.serverVM.ts {
+					Text(value)
+				}
+			}
+
 			// Indoor Air Quality
 			Image(systemName: "house")
 				.imageScale(.large)
@@ -23,7 +37,7 @@ struct ContentView: View {
 				}
 				HStack() {
 					if let value = self.serverVM.indoorTempC {
-						Text(String(format: "Temperature %.2f \u{00B0}C", value))
+						Text(String(format: "Temperature %.2f \u{00B0}C (%.2f \u{00B0}F)", value, value * 1.8 + 32.0))
 					}
 				}
 				HStack() {
@@ -51,9 +65,20 @@ struct ContentView: View {
 				}
 			}
 			.padding(10)
+
+			HStack() {
+				Spacer()
+			}
 		}
         .padding()
 		.opacity(0.8)
+		.frame(
+			minWidth: 0,
+			maxWidth: .infinity,
+			minHeight: 0,
+			maxHeight: .infinity,
+			alignment: .center
+		)
 		.background(
 			Image("Image")
 				.resizable()

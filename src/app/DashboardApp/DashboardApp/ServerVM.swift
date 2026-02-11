@@ -9,6 +9,7 @@ import Combine
 class ServerVM : ObservableObject {
 	static let shared = ServerVM()
 
+	@Published var ts: String?
 	@Published var indoorCo2ppm: Int?
 	@Published var indoorTempC: Float?
 	@Published var indoorHumidity: Float?
@@ -23,6 +24,10 @@ class ServerVM : ObservableObject {
 		Task { @MainActor in
 			do {
 				let item = try await APIClient.fetchIndoorStatus()
+
+				let isoFormatter = ISO8601DateFormatter()
+				isoFormatter.timeZone = TimeZone.current // Use local time
+				self.ts = isoFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(item.ts)))
 
 				// Update published properties with decoded values
 				self.indoorCo2ppm = item.co2_ppm
@@ -49,7 +54,7 @@ class ServerVM : ObservableObject {
 	func update() {
 		self.fetchStatus()
 
-		Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+		Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { _ in
 			self.fetchStatus()
 		}
 	}

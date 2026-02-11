@@ -26,12 +26,12 @@ struct Provider: AppIntentTimelineProvider {
 
 		do {
 			let item = try await APIClient.fetchIndoorStatus()
-			let currentDate = Date()
-			let entryDate = Calendar.current.date(byAdding: .hour, value: 0, to: currentDate)!
+			let currentDate = Date(timeIntervalSince1970: TimeInterval(item.ts))
+			let entryDate = currentDate
 
 			let intent = ConfigurationAppIntent()
 			intent.attribute1 = String(format: "CO\u{00B2} %u ppm", item.co2_ppm)
-			intent.attribute2 = String(format: "Temp %.2f \u{00B0}C", item.temp_c)
+			intent.attribute2 = String(format: "%.2f \u{00B0}C (%.2f \u{00B0}F)", item.temp_c, item.temp_c * 1.8 + 32.0)
 
 			let entry = StatusEntry(date: entryDate, configuration: intent)
 			entries.append(entry)
@@ -53,7 +53,10 @@ struct DashboardWidgetEntryView : View {
 
     var body: some View {
 		VStack {
-			Text(self.entry.date, style: .time)
+			HStack {
+				Image(systemName: "house")
+				Text(self.entry.date, style: .time)
+			}
 			VStack {
 				Text(self.entry.configuration.attribute1)
 				Text(self.entry.configuration.attribute2)
@@ -87,3 +90,4 @@ extension ConfigurationAppIntent {
 } timeline: {
 	StatusEntry(date: .now, configuration: .co2)
 }
+
