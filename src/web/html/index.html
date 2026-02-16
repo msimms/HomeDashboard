@@ -464,10 +464,12 @@
 
                 records.forEach(record => {
                     let ts = record.ts;
+
                     for (const [key, value] of Object.entries(record)) {
                         if (key != 'ts') {
                             if (is_numeric(value.load_time_secs)) {
                                 let new_item = {'x': ts, 'y': value.load_time_secs};
+
                                 if (key in graphs) {
                                     graphs[key].push(new_item);
                                 }
@@ -496,12 +498,24 @@
 
     /// @function get_keg_readings
     function get_keg_readings(start_ts) {
-        let api_url = "${root_url}/api/1.0/keg?start_ts=" + start_ts
+        let api_url = "${root_url}/api/1.0/scale_calibration?name=keg";
 
         send_get_request_async(api_url, function (response_code, response_text) {
             if (response_code == 200) {
-                const records = JSON.parse(response_text);
-                var graphs = {};
+                const scale_calibration = JSON.parse(response_text);
+
+                let api_url = "${root_url}/api/1.0/keg?start_ts=" + start_ts
+
+                send_get_request_async(api_url, function (response_code, response_text) {
+                    if (response_code == 200) {
+                        const records = JSON.parse(response_text);
+
+                        if (records.length > 0) {
+                            let last_record = records[-1];
+                            //g_keg_level.setPercentage(50);
+                        }
+                    }
+                });
             }
         });
     }

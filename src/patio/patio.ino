@@ -175,6 +175,8 @@ void setup_am2315c() {
   //pinMode(A4, INPUT_PULLUP);
   //pinMode(A5, INPUT_PULLUP);
 
+  delay(5);
+
   if (!DHT.begin()) {
     Serial.println("[ERROR] Sensor not found. Check wiring!");
   }
@@ -196,9 +198,7 @@ void setup() {
 
   // Initialize serial and wait for port to open.
   Serial.begin(9600);
-  while (!Serial) {
-    delay(100);
-  }
+  delay(100);
   Serial.println("[INFO] Initializing....");
 
   // Set the LED as output.
@@ -222,10 +222,10 @@ void loop() {
   float wind_speed_ms = read_anemometer();
 
   // Read temperature and humidity.
-  Serial.println("[INFO] Reading temperature and humidity...");
   float temp_c = 0.0;
   float humidity = 0.0;
   if (DHT.isConnected()) {
+    Serial.println("[INFO] Reading temperature and humidity...");
     read_temperature_and_humidity_from_am2315c(&temp_c, &humidity);
   }
   else {
@@ -242,15 +242,28 @@ void loop() {
 
   // Format the output.
   char buff[800];
-  snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"patio_monitor\", \"api_key\": \"%s\", \"wind speed ms\": %f, \"temperature\": %f, \"humidity\": %f, \"moisture_sensor_1\": %f, \"moisture_sensor_2\": %f}", API_KEY, wind_speed_ms, temp_c, humidity, moisture1, moisture2);
+  if (DHT.isConnected()) {
+    snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"patio_monitor\", \"api_key\": \"%s\", \"wind speed ms\": %f, \"temperature\": %f, \"humidity\": %f, \"moisture_sensor_1\": %f, \"moisture_sensor_2\": %f}", API_KEY, wind_speed_ms, temp_c, humidity, moisture1, moisture2);
+  }
+  else {
+    snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"patio_monitor\", \"api_key\": \"%s\", \"wind speed ms\": %f, \"moisture_sensor_1\": %f, \"moisture_sensor_2\": %f}", API_KEY, wind_speed_ms, moisture1, moisture2);
+  }
   Serial.println(buff);
 
   // Send.
   post_status(buff);
 
-  // Wait.
-  delay(600000);
+  // Success! Blink the LED to show that we're happy.
+  for (int i = 0; i < 5; ++i) {
+    digitalWrite(LED, HIGH);
+    delay(500);
+    digitalWrite(LED, LOW);
+    delay(500);
+  }
+
+  // Wait for ten minutes (minus the 5 seconds we just blinked the light for).
+  delay(600000 - 5000);
 
   // Re-init I2C on wake from sleep.
-  dht_reinit();
+  //dht_reinit();
 }
