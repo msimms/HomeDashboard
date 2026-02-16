@@ -26,6 +26,7 @@ struct IndoorData: Decodable {
 struct PatioData: Decodable {
 	let temp_c: Float
 	let humidity: Float
+	let wind_speed_ms: Float
 	let moisture_sensor_1: Float
 	let moisture_sensor_2: Float
 	let ts: Float
@@ -33,6 +34,7 @@ struct PatioData: Decodable {
 	enum CodingKeys: String, CodingKey {
 		case temp_c
 		case humidity
+		case wind_speed_ms
 		case moisture_sensor_1
 		case moisture_sensor_2
 		case ts

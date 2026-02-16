@@ -64,6 +64,11 @@ struct ContentView: View {
 					}
 				}
 				HStack() {
+					if let value = self.serverVM.windSpeedMs {
+						Text(String(format: "Wind Speed %.2f m/s", value))
+					}
+				}
+				HStack() {
 					if let value = self.serverVM.moistureSensor1 {
 						Text(String(format: "Moisture Sensor #1 %.2f", value))
 					}

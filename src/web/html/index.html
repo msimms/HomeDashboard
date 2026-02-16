@@ -75,6 +75,7 @@
     var g_ac_outlet_temp_graph = null;
     var g_patio_temp_graph = null;
     var g_patio_humidity_graph = null;
+    var g_patio_wind_speed_graph = null;
     var g_patio_moisture1_graph = null;
     var g_patio_moisture2_graph = null;
     var g_website_status_graphs = {};
@@ -221,6 +222,7 @@
         else if (
             settings.element_id == "temperature" ||
             settings.element_id == "humidity" ||
+            settings.element_id == "wind_speed_ms" ||
             settings.element_id == "moisture_sensor_1" ||
             settings.element_id == "moisture_sensor_2") {
             get_patio_monitor_readings(min_x / 1000.0);
@@ -373,6 +375,7 @@
 
                 var temp_readings = [];
                 var humidity_readings = [];
+                var wind_speed = [];
                 var moisture_sensor_1_readings = [];
                 var moisture_sensor_2_readings = [];
 
@@ -381,6 +384,7 @@
 
                     temp_readings.push( { x: ts, y: record['temperature'] });
                     humidity_readings.push( { x: ts, y: record['humidity'] });
+                    wind_speed.push( { x: ts, y: record['wind speed ms'] });
                     moisture_sensor_1_readings.push( { x: ts, y: record['moisture_sensor_1'] });
                     moisture_sensor_2_readings.push( { x: ts, y: record['moisture_sensor_2'] });
                 }
@@ -390,7 +394,9 @@
                         g_patio_temp_graph = create_graph_settings("temp_chart", "Patio Temperature", "C", "red", 250);
                         draw_graph2([], g_patio_temp_graph);
                     }
-                    g_patio_temp_graph.update_func(temp_readings);
+                    else {
+                        g_patio_temp_graph.update_func(temp_readings);
+                    }
                 }
                 if (humidity_readings.length > 0) {
                     if (g_patio_humidity_graph == null) {
@@ -399,6 +405,15 @@
                     }
                     else {
                         g_patio_humidity_graph.update_func(humidity_readings);
+                    }
+                }
+                if (wind_speed.length > 0) {
+                    if (g_patio_wind_speed_graph == null) {
+                        g_patio_wind_speed_graph = create_graph_settings("wind_speed_chart", "Wind Speed (ms)", "m/s", "orange", 250);
+                        draw_graph2(wind_speed, g_patio_wind_speed_graph);
+                    }
+                    else {
+                        g_patio_wind_speed_graph.update_func(wind_speed);
                     }
                 }
                 if (moisture_sensor_1_readings.length > 0) {

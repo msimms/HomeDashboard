@@ -544,7 +544,7 @@ class AppMongoDatabase(Database):
             self.log_error(sys.exc_info()[0])
         return []
 
-    def retrieve_latest_patio_status(self, min_ts):
+    def retrieve_latest_patio_status(self):
         """Retrieve method for the latest patio monitor measurement."""
         try:
             return self.patio_monitor.find({}, { "_id": 0 }).sort('_id', -1).limit(1).next()
