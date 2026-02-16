@@ -63,6 +63,16 @@ struct ContentView: View {
 						Text(String(format: "Humidity %.2f %%", value))
 					}
 				}
+				HStack() {
+					if let value = self.serverVM.moistureSensor1 {
+						Text(String(format: "Moisture Sensor #1 %.2f", value))
+					}
+				}
+				HStack() {
+					if let value = self.serverVM.moistureSensor2 {
+						Text(String(format: "Moisture Sensor #2 %.2f", value))
+					}
+				}
 			}
 			.padding(10)
 

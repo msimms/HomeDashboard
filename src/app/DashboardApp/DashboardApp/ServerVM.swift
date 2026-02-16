@@ -15,6 +15,8 @@ class ServerVM : ObservableObject {
 	@Published var indoorHumidity: Float?
 	@Published var outdoorTempC: Float?
 	@Published var outdoorHumidity: Float?
+	@Published var moistureSensor1: Float?
+	@Published var moistureSensor2: Float?
 
 	private init() {
 		self.update()
@@ -46,6 +48,8 @@ class ServerVM : ObservableObject {
 				// Update published properties with decoded values
 				self.outdoorTempC = item.temp_c
 				self.outdoorHumidity = item.humidity
+				self.moistureSensor1 = item.moisture_sensor_1
+				self.moistureSensor2 = item.moisture_sensor_2
 			} catch {
 			}
 		}
