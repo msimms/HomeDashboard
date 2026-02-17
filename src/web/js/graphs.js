@@ -71,6 +71,9 @@ function draw_graph2(data, settings, column_index = 0) {
     let svg_width = column_width;
     let svg_height = height + margin.top + margin.bottom;
 
+    // Remove junk.
+    settings.data = data.filter(element => element.y !== undefined);
+
     // Scale the data to milliseconds.
     settings.data = data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
 
@@ -222,6 +225,9 @@ function draw_graph2(data, settings, column_index = 0) {
 
     // Update function
     function update(new_data) {
+
+        // Remove junk.
+        new_data = new_data.filter(element => element.y !== undefined);
 
         // Scale the data to milliseconds.
         new_data = new_data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
