@@ -177,11 +177,12 @@ void setup_am2315c() {
 
   delay(5);
 
-  if (!DHT.begin()) {
+  if (DHT.begin()) {
+    delay(1000);
+  }
+  else {
     Serial.println("[ERROR] Sensor not found. Check wiring!");
   }
-
-  delay(1000);
 
   Serial.println("[INFO] Done setting up the AM2315...");
 }
@@ -191,6 +192,17 @@ void dht_reinit() {
   Wire.end();
   delay(5);
   setup_am2315c();
+}
+
+/// @function blink
+/// Blinks the LED the specified number of times, once per second.
+void blink(int num_blinks) {
+  for (int i = 0; i < num_blinks; ++i) {
+    digitalWrite(LED, HIGH);
+    delay(500);
+    digitalWrite(LED, LOW);
+    delay(500);
+  }
 }
 
 /// @function setup
@@ -240,6 +252,9 @@ void loop() {
   // Turn the LED off.
   digitalWrite(LED, LOW);
 
+  // Success! Blink the LED to show that we're happy.
+  blink(3);
+
   // Format the output.
   char buff[800];
   if (DHT.isConnected()) {
@@ -254,15 +269,10 @@ void loop() {
   post_status(buff);
 
   // Success! Blink the LED to show that we're happy.
-  for (int i = 0; i < 5; ++i) {
-    digitalWrite(LED, HIGH);
-    delay(500);
-    digitalWrite(LED, LOW);
-    delay(500);
-  }
+  blink(5);
 
-  // Wait for ten minutes (minus the 5 seconds we just blinked the light for).
-  delay(600000 - 5000);
+  // Wait for ten minutes (minus the time spent blinking).
+  delay(600000 - 5000 - 3000);
 
   // Re-init I2C on wake from sleep.
   //dht_reinit();
