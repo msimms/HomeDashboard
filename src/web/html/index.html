@@ -392,7 +392,7 @@
                 if (temp_readings.length > 0) {
                     if (g_patio_temp_graph == null) {
                         g_patio_temp_graph = create_graph_settings("temp_chart", "Patio Temperature", "C", "red", 250);
-                        draw_graph2([], g_patio_temp_graph);
+                        draw_graph2(temp_readings, g_patio_temp_graph);
                     }
                     else {
                         g_patio_temp_graph.update_func(temp_readings);
