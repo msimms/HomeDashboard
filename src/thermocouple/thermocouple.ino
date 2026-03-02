@@ -138,9 +138,7 @@ void setup() {
 
   // Initialize serial and wait for port to open.
   Serial.begin(115200);
-  while (!Serial) {
-    delay(100);
-  }
+  delay(100);
   Serial.println("[INFO] MAX6675 + ESP8266 ready");
 }
 
@@ -165,5 +163,5 @@ void loop() {
     // Send.
     post_status(buff);
   }
-  delay(60000);
+  ESP.deepSleep(60000);
 }
