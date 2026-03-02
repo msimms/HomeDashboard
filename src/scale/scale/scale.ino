@@ -213,7 +213,7 @@ void post_status(String str) {
   Serial.println(String(current_time.getHour()) + ":" + String(current_time.getMinutes()) + ":" + String(current_time.getSeconds()));
 
   // Update the root certificate, because the one we need isn't in the default set.
-//  g_ssl.setCACert(root_ca);
+  //g_ssl.setCACert(root_ca);
   g_ssl.setTimeout(15000); // keep things from hanging forever
 
   // Connect.
@@ -250,7 +250,12 @@ void post_status(String str) {
   // Read the response body.
   String body = http.responseBody();
   Serial.println("[INFO] Response body:");
-  Serial.println(body);
+  if (body.length() > 0) {
+    Serial.println(body);
+  }
+  else {
+    Serial.println("None");
+  }
 
   http.stop();
   g_ssl.stop();
@@ -278,6 +283,7 @@ void update_display(char* msg) {
 
   // Message.
   g_display.setTextSize(1); // X pixel scale
+
   g_display.setTextColor(SSD1306_WHITE); // Draw white text
   g_display.setCursor(LEFT_TEXT_MARGIN, 16); // Start at top-left corner, after the logo
   g_display.println(msg);
@@ -510,9 +516,7 @@ void setup() {
 
   // Set the serial IO rate.
   Serial.begin(9600);
-  while (!Serial) {
-    delay(100);
-  }
+  delay(100);
 
   // Start the real time clock.
   RTC.begin();
