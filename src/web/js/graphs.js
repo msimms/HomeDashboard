@@ -75,7 +75,7 @@ function draw_graph2(data, settings, column_index = 0) {
     settings.data = data.filter(element => element.y !== undefined);
 
     // Scale the data to milliseconds.
-    settings.data = data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
+    settings.data = settings.data.map(function(element) { return { 'x': element.x * 1000, 'y': element.y }; });
 
     let tooltip = d3.select("#charts")
         .append("div")

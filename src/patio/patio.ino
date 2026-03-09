@@ -272,8 +272,9 @@ void loop() {
   blink(5);
 
   // Wait for ten minutes (minus the time spent blinking).
+  //delay(10000);
   delay(600000 - 5000 - 3000);
 
   // Re-init I2C on wake from sleep.
-  //dht_reinit();
+  dht_reinit();
 }
