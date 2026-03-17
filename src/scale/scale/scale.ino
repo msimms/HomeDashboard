@@ -118,6 +118,7 @@ bool g_cal_set = false;
 
 // SSL
 WiFiSSLClient g_ssl;
+HttpClient g_client(g_ssl, STATUS_URL, STATUS_PORT);
 
 // NTP
 WiFiUDP g_udp;
@@ -189,7 +190,7 @@ void print_wifi_status() {
 }
 
 /// @function post_status
-void post_status(String str) {
+void post_status(String body) {
 
   // (Re)connect to Wifi.
   setup_wifi();
@@ -212,53 +213,22 @@ void post_status(String str) {
   Serial.print("[INFO] Current time: ");
   Serial.println(String(current_time.getHour()) + ":" + String(current_time.getMinutes()) + ":" + String(current_time.getSeconds()));
 
-  // Update the root certificate, because the one we need isn't in the default set.
-  //g_ssl.setCACert(root_ca);
-  g_ssl.setTimeout(15000); // keep things from hanging forever
-
-  // Connect.
-  Serial.println("[INFO] TLS connect...");
-  int ok = g_ssl.connect(STATUS_URL, STATUS_PORT);
-  if (ok != 1) {
-    Serial.print("[ERROR] TLS connect failed. g_ssl.connect = ");
-    Serial.println(ok);
-    g_ssl.stop();
-    return;
-  }
-
   // Start an HTTP session.
-  HttpClient http(g_ssl, STATUS_URL, STATUS_PORT);
-  http.setTimeout(15000);
-  Serial.println("[INFO] Beginning HTTPS POST...");
+  g_client.setHttpResponseTimeout(60000);
+  Serial.println("[INFO] Sending HTTPS POST...");
+  int err = g_client.post("/api/1.0/update_status", "application/json", body);
+  Serial.print("post() returned: ");
+  Serial.println(err);
 
-  // Start POST.
-  int rc = http.post("/api/1.0/update_status", "application/json", str);
-  Serial.print("[INFO] post() return code: ");
-  Serial.println(rc);
-  if (rc != 0) {
-    Serial.println("[ERROR] HTTP POST failed!");
-    http.stop();
-    g_ssl.stop();
-    return;
-  }
+  int statusCode = g_client.responseStatusCode();
+  Serial.print("[INFO] HTTP Status Code: ");
+  Serial.println(statusCode);
 
-  // Read the response code.
-  int status = http.responseStatusCode();
-  Serial.print("[INFO] HTTP status: ");
-  Serial.println(status);
+  String response = g_client.responseBody();
+  Serial.print("[INFO] HTTP Response Body: ");
+  Serial.println(response);
 
-  // Read the response body.
-  String body = http.responseBody();
-  Serial.println("[INFO] Response body:");
-  if (body.length() > 0) {
-    Serial.println(body);
-  }
-  else {
-    Serial.println("None");
-  }
-
-  http.stop();
-  g_ssl.stop();
+  g_client.stop();
 }
 
 /// @function float_is_valid
@@ -515,7 +485,7 @@ void read_given_weight_value(void) {
 void setup() {
 
   // Set the serial IO rate.
-  Serial.begin(9600);
+  Serial.begin(115300);
   delay(100);
 
   // Start the real time clock.
