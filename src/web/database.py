@@ -592,7 +592,7 @@ class AppMongoDatabase(Database):
     def create_scale_calibration(self, name, tare_value, cal_value, cal_weight, full_value):
         """Create method for scale calibrations."""
         try:
-            post = { SCALE_NAME_KEY: name, SCALE_TARE_VALUE_KEY: tare_value, SCALE_CALIBRATION_VALUE_KEY: cal_value, SCALE_FULL_VALUE_KEY: full_value }
+            post = { SCALE_NAME_KEY: name, SCALE_TARE_VALUE_KEY: tare_value, SCALE_CALIBRATION_VALUE_KEY: cal_value, SCALE_CALIBRATION_WEIGHT_KEY: cal_weight, SCALE_FULL_VALUE_KEY: full_value }
             return insert_into_collection(self.scale_calibrations_collection, post)
         except:
             self.log_error(traceback.format_exc())
@@ -602,7 +602,7 @@ class AppMongoDatabase(Database):
     def update_scale_calibration(self, name, tare_value, cal_value, cal_weight, full_value):
         """Update method for scale calibrations."""
         try:
-            cal = self.scale_calibrations_collection.find_one({ SCALE_NAME_KEY: name }, {"_id": 0 })
+            cal = self.scale_calibrations_collection.find_one({ SCALE_NAME_KEY: name })
             if cal is not None:
                 if tare_value is not None:
                     cal[SCALE_TARE_VALUE_KEY] = tare_value
@@ -620,9 +620,11 @@ class AppMongoDatabase(Database):
     def retrieve_scale_calibration(self, name):
         """Retrieve method for scale calibrations."""
         try:
-            cal = self.scale_calibrations_collection.find_one({ SCALE_NAME_KEY: name }, {"_id": 0 })
+            cal = self.scale_calibrations_collection.find_one({ SCALE_NAME_KEY: name })
             if cal is None:
                 cal = {}
+            if SCALE_NAME_KEY not in cal:
+                cal[SCALE_NAME_KEY] = name
             if SCALE_TARE_VALUE_KEY not in cal:
                 cal[SCALE_TARE_VALUE_KEY] = None
             if SCALE_CALIBRATION_VALUE_KEY not in cal:

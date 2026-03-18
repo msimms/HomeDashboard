@@ -134,6 +134,7 @@
 
         send_post_request_async(api_url, dict, function(status, response) {
             if (status == 200) {
+                window.location.replace("${root_url}/admin");
             }
             else {
                 alert("Scale tare failed!");
@@ -143,19 +144,28 @@
 
     /// @function calibrate_scale
     function calibrate_scale() {
-        let api_url = "/api/1.0/calibrate_scale";
-        let dict = {};
+        let value = prompt("How many kilograms are on the scale?");
 
-        dict["session_cookie"] = get_session_cookie();
-        dict["name"] = "keg";
+        if (value === null) {
+            alert("A calibration value was not provided!");
+        }
+        else {
+            let api_url = "/api/1.0/calibrate_scale";
+            let dict = {};
 
-        send_post_request_async(api_url, dict, function(status, response) {
-            if (status == 200) {
-            }
-            else {
-                alert("Scale tare failed!");
-            }
-        });
+            dict["session_cookie"] = get_session_cookie();
+            dict["name"] = "keg";
+            dict["calibration_weight"] = value;
+
+            send_post_request_async(api_url, dict, function(status, response) {
+                if (status == 200) {
+                    window.location.replace("${root_url}/admin");
+                }
+                else {
+                    alert("Scale calibration failed!");
+                }
+            });
+        }
     }
 
     /// @function set_scale_as_full
@@ -168,9 +178,10 @@
 
         send_post_request_async(api_url, dict, function(status, response) {
             if (status == 200) {
+                window.location.replace("${root_url}/admin");
             }
             else {
-                alert("Scale tare failed!");
+                alert("Scale full set failed!");
             }
         });
     }
@@ -208,6 +219,9 @@
         send_get_request_async(api_url, function (response_code, response_text) {
             if (response_code == 200) {
                 const calibration = JSON.parse(response_text);
+                set_element_text('keg_scale_tare_value', calibration["tare_value"]);
+                set_element_text('keg_scale_calibration_value', calibration["calibration_value"]);
+                set_element_text('keg_scale_full_value', calibration["full_value"]);
             }
             else {
                 alert("There was an error retrieving the scale calibration.");

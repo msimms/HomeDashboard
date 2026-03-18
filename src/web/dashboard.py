@@ -411,8 +411,10 @@ def handle_api_scale_calibration_request(values):
     if not database.SCALE_NAME_KEY in values:
         raise ApiAuthenticationException("Scale name not specified.")
     db = connect_to_db()
-    readings = db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
-    result = json.dumps(readings)
+    cal = db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
+    if database.DATABASE_ID_KEY in cal:
+        del cal[database.DATABASE_ID_KEY]
+    result = json.dumps(cal)
     return True, result
 
 def handle_api_website_status(values):
@@ -575,21 +577,21 @@ def handle_api_tare_scale(values):
     raw_value = scale_reading[database.SCALE_RAW_VALUE_KEY]
 
     # Find the latest calibration record.
-    cal_rec = self.db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
+    cal_rec = db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
 
     # Update the calibration record.
     if bool(cal_rec):
-        self.db.create_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
+        db.update_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
             raw_value,
             cal_rec[database.SCALE_CALIBRATION_VALUE_KEY],
             cal_rec[database.SCALE_CALIBRATION_WEIGHT_KEY],
-            cal_rec[database.SCALE_CALIBRATION_FULL_KEY])
+            cal_rec[database.SCALE_FULL_VALUE_KEY])
     else:
-        self.db.update_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
+        db.create_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
             raw_value,
             cal_rec[database.SCALE_CALIBRATION_VALUE_KEY],
             cal_rec[database.SCALE_CALIBRATION_WEIGHT_KEY],
-            cal_rec[database.SCALE_CALIBRATION_FULL_KEY])
+            cal_rec[database.SCALE_FULL_VALUE_KEY])
 
     return True, ""
 
@@ -606,24 +608,24 @@ def handle_api_calibrate_scale(values):
     raw_value = scale_reading[database.SCALE_RAW_VALUE_KEY]
 
     # Find the latest calibration record.
-    cal_rec = self.db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
+    cal_rec = db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
 
     # Calibration weight.
     cal_weight = values[database.SCALE_CALIBRATION_WEIGHT_KEY]
 
     # Update the calibration record.
     if bool(cal_rec):
-        self.db.create_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
+        db.update_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
             cal_rec[database.SCALE_TARE_VALUE_KEY],
             raw_value,
             cal_weight,
-            cal_rec[database.SCALE_CALIBRATION_FULL_KEY])
+            cal_rec[database.SCALE_FULL_VALUE_KEY])
     else:
-        self.db.update_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
+        db.create_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
             cal_rec[database.SCALE_TARE_VALUE_KEY],
             raw_value,
             cal_weight,
-            cal_rec[database.SCALE_CALIBRATION_FULL_KEY])
+            cal_rec[database.SCALE_FULL_VALUE_KEY])
 
     return True, ""
 
@@ -640,17 +642,17 @@ def handle_api_full_scale(values):
     raw_value = scale_reading[database.SCALE_RAW_VALUE_KEY]
 
     # Find the latest calibration record.
-    cal_rec = self.db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
+    cal_rec = db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
 
     # Update the calibration record.
     if bool(cal_rec):
-        self.db.create_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
+        db.update_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
             cal_rec[database.SCALE_TARE_VALUE_KEY],
             cal_rec[database.SCALE_CALIBRATION_VALUE_KEY],
             cal_rec[database.SCALE_CALIBRATION_WEIGHT_KEY],
             raw_value)
     else:
-        self.db.update_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
+        db.create_scale_calibration(cal_rec[database.SCALE_NAME_KEY],
             cal_rec[database.SCALE_TARE_VALUE_KEY],
             cal_rec[database.SCALE_CALIBRATION_VALUE_KEY],
             cal_rec[database.SCALE_CALIBRATION_WEIGHT_KEY],
