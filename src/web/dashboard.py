@@ -411,7 +411,7 @@ def handle_api_scale_calibration_request(values):
     if not database.SCALE_NAME_KEY in values:
         raise ApiAuthenticationException("Scale name not specified.")
     db = connect_to_db()
-    readings = list(db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY]))
+    readings = db.retrieve_scale_calibration(values[database.SCALE_NAME_KEY])
     result = json.dumps(readings)
     return True, result
 

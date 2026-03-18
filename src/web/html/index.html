@@ -527,7 +527,16 @@
 
                         if (records.length > 0) {
                             let last_record = records[-1];
-                            //g_keg_level.setPercentage(50);
+                            let full_value = scale_calibration["full_value"];
+                            let tare_value = scale_calibration["tare_value"];
+
+                            if (full_value != null && tare_value != null) {
+                                let percentage = (full_value - tare_value) / (last_record.raw_value - tare_value);
+                                g_keg_level.setPercentage(percentage);
+                            }
+                            else {
+                                g_keg_level.setPercentage(0);
+                            }
                         }
                     }
                 });
