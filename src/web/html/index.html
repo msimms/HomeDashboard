@@ -386,8 +386,8 @@
                     temp_readings.push( { x: ts, y: record['temperature'] });
                     humidity_readings.push( { x: ts, y: record['humidity'] });
                     wind_speed.push( { x: ts, y: record['wind speed ms'] });
-                    moisture_sensor_1_readings.push( { x: ts, y: record['moisture_sensor_1'] });
-                    moisture_sensor_2_readings.push( { x: ts, y: record['moisture_sensor_2'] });
+                    moisture_sensor_1_readings.push( { x: ts, y: record['moisture_sensor_1'] * 100.0 });
+                    moisture_sensor_2_readings.push( { x: ts, y: record['moisture_sensor_2'] * 100.0 });
                 }
 
                 if (temp_readings.length > 0) {
