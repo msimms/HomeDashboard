@@ -27,4 +27,7 @@ DerivedData
 # Blender
 *.blend1
 
+# FreeCAD
+*.FCBak
+
 arduino_secrets.h

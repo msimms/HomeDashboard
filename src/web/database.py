@@ -55,6 +55,7 @@ COLLECTION_USERS = "users"
 COLLECTION_SESSIONS = "sessions"
 COLLECTION_SCALE_CALIBRATIONS = "scale_calibrations"
 COLLECTION_API_KEYS = "api_keys"
+COLLECTION_SETTINGS = "settings"
 COLLECTION_INDOOR_AIR_QUALITY = "indoor_air_quality"
 COLLECTION_PATIO_MONITOR = "patio_monitor"
 COLLECTION_AC = "ac"
@@ -179,6 +180,7 @@ class AppMongoDatabase(Database):
             self.sessions_collection = self.database[COLLECTION_SESSIONS]
             self.scale_calibrations_collection = self.database[COLLECTION_SCALE_CALIBRATIONS]
             self.api_keys_collection = self.database[COLLECTION_API_KEYS]
+            self.settings_collection = self.database[COLLECTION_SETTINGS]
             self.limits_collection = self.database[COLLECTION_LIMITS]
             self.indoor_air_quality = self.database[COLLECTION_INDOOR_AIR_QUALITY]
             self.patio_monitor = self.database[COLLECTION_PATIO_MONITOR]
@@ -427,6 +429,39 @@ class AppMongoDatabase(Database):
             self.log_error(traceback.format_exc())
             self.log_error(sys.exc_info()[0])
         return False
+
+    #
+    # Sensor limit methods
+    #
+
+    def create_setting(self, key, value):
+        """Create method for a setting."""
+        if key is None:
+            raise Exception("Unexpected empty object: key")
+        if value is None:
+            raise Exception("Unexpected empty object: value")
+
+        try:
+            post = { "key": str(key), "value": value }
+            return insert_into_collection(self.settings_collection, post)
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return False
+
+    def retrieve_setting(self, key):
+        """Retrieve method for a setting."""
+        if key is None:
+            raise Exception("Unexpected empty object: key")
+
+        try:
+            settings_result = self.settings_collection.find_one({ "key": key }, {})
+            if settings_result is not None:
+                return settings_result["value"]
+        except:
+            self.log_error(traceback.format_exc())
+            self.log_error(sys.exc_info()[0])
+        return None
 
     #
     # Sensor limit methods

@@ -25,6 +25,8 @@
 // Global constants
 const CO2_KEY = "co2_ppm"
 const TEMP_KEY = "temp_c"
+const IRRIGATION_TIME_KEY = "irrigation_time"
+const IRRIGATION_DURATION_KEY = "irrigation_duration"
 
 /// @function is_numeric
 function is_numeric(num) {
@@ -101,6 +103,30 @@ function set_element_text(element_id, text) {
     let cell = document.getElementById(element_id);
     if (cell != null) {
         cell.value = text;
+    }
+    else {
+        console.log(element_id + " not found!");
+    }
+}
+
+/// @function disable_element
+function disable_element(element_id) {
+    var cell = document.getElementById(element_id);
+    if (cell) {
+        cell.style.color = "Gray";
+        cell.style.opacity = "0.5";
+    }
+    else {
+        console.log(element_id + " not found!");
+    }
+}
+
+/// @function enable_element
+function enable_element(element_id) {
+    var cell = document.getElementById(element_id);
+    if (cell) {
+        cell.style.color = "";
+        cell.style.opacity = "1.0";
     }
     else {
         console.log(element_id + " not found!");

@@ -124,6 +124,32 @@
         update_limits(CO2_KEY, get_element_text('co2_limit'), 0);
     }
 
+    /// @function update_settings
+    /// Updates a setting in the database.
+    function update_settings(key, value) {
+        let api_url = "/api/1.0/create_setting";
+        let dict = {};
+
+        dict["session_cookie"] = get_session_cookie();
+        dict["key"] = key;
+        dict["value"] = value;
+
+        send_post_request_async(api_url, dict, function(status, response) {
+            if (status == 200) {
+                window.location.replace("${root_url}/admin");
+            }
+            else {
+                alert("Saving settings failed!");
+            }
+        });
+    }
+
+    /// @function update_irrigation
+    function update_irrigation() {
+        update_settings(IRRIGATION_TIME_KEY, get_element_text('irrigation_time_value'));
+        update_settings(IRRIGATION_DURATION_KEY, get_element_text('irrigation_time_duration'));
+    }
+
     /// @function tare_scale
     function tare_scale() {
         let api_url = "/api/1.0/tare_scale";
@@ -201,6 +227,21 @@
         });
     }
 
+    /// @function fetch_setting
+    function fetch_setting(key, cb) {
+        let api_url = "${root_url}/api/1.0/setting?key=" + key + "&session_cookie=" + get_session_cookie();
+
+        send_get_request_async(api_url, function (response_code, response_text) {
+            if (response_code == 200) {
+                const setting = JSON.parse(response_text);
+                cb(setting['value']);
+            }
+            else {
+                alert("There was an error retrieving a setting.");
+            }
+        });
+    }
+
     /// @function fetch_all_limits
     function fetch_all_limits() {
         fetch_limits(TEMP_KEY, function(lower, upper) {
@@ -209,6 +250,16 @@
         });
         fetch_limits(CO2_KEY, function(lower, upper) {
             set_element_text('co2_limit', upper);
+        });
+    }
+
+    /// @function fetch_all_settings
+    function fetch_all_settings() {
+        fetch_setting(IRRIGATION_TIME_KEY, function(value) {
+            set_element_text('irrigation_time_value', value);
+        });
+        fetch_setting(IRRIGATION_DURATION_KEY, function(value) {
+            set_element_text('irrigation_duration_value', value);
         });
     }
 
@@ -231,6 +282,7 @@
 
     list_api_keys();
     fetch_all_limits();
+    fetch_all_settings();
     fetch_scale_calibration();
 </script>
 
@@ -284,6 +336,21 @@
     </div>
 </div>
 <!-- Keg Scale End -->
+
+<!-- Irrigation Start -->
+<div id="irrigation" class="block">
+    <h2>Irrigation</h2>
+    <div>
+        <label>Irrigation Time</label><br>
+        <input type="number" id="irrigation_time_value" value="7"><br>
+        <label>Irrigation Duration (Secs)</label><br>
+        <input type="number" id="irrigation_time_duration" value="60"><br>
+    </div>
+    <div>
+        <button type="button" onclick="update_irrigation()">Update</button>
+    </div>
+</div>
+<!-- Irrigation End -->
 
 </body>
 

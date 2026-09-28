@@ -75,6 +75,7 @@ PARAM_COLLECTION = "collection"
 PARAM_TIMESTAMP = "ts"
 PARAM_NAME = "name"
 PARAM_LIMITS_KEY = "key"
+PARAM_SETTINGS_KEY = "key"
 
 def login_required(function_to_protect):
     @functools.wraps(function_to_protect)
@@ -690,6 +691,22 @@ def handle_api_list_api_keys(values):
 
     return True, keys
 
+def handle_api_create_limits(values):
+    """Called when an API request to set sensor limits is received."""
+    # Validate the session cookie.
+    _, user = common_session_check(values)
+
+    # Connect to the database.
+    db = connect_to_db()
+
+    # Remove any old entries.
+    db.delete_sensor_limits(values['key'])
+
+    # Store.
+    db.create_sensor_limit(values['key'], values['upper_limit'], values['lower_limit'])
+
+    return True, ""
+
 def handle_api_limits_request(values):
     """Called when an API request to list sensor limits is received."""
     # Check for required parameters.
@@ -708,21 +725,36 @@ def handle_api_limits_request(values):
 
     return True, result
 
-def handle_api_create_limits(values):
-    """Called when an API request to set sensor limits is received."""
+def handle_api_create_setting(values):
+    """Called when an API request to create or update a setting is received."""
     # Validate the session cookie.
     _, user = common_session_check(values)
 
     # Connect to the database.
     db = connect_to_db()
 
-    # Remove any old entries.
-    db.delete_sensor_limits(values['key'])
-
     # Store.
-    db.create_sensor_limit(values['key'], values['upper_limit'], values['lower_limit'])
+    db.create_setting(values['key'], values['value'])
 
     return True, ""
+
+def handle_api_settings_request(values):
+    """Called when an API request to retrieve a sensor value is received."""
+    # Check for required parameters.
+    if PARAM_SETTINGS_KEY not in values:
+        raise ApiAuthenticationException("Key not specified.")
+
+    # Validate the session cookie.
+    _, user = common_session_check(values)
+
+    # Connect to the database.
+    db = connect_to_db()
+
+    # Query the database.
+    value = db.retrieve_setting(values[PARAM_SETTINGS_KEY])
+    result = { 'value': value }
+
+    return True, result
 
 def handle_api_1_0_get_request(request, values):
     """Called to parse a version 1.0 API GET request."""
@@ -742,6 +774,8 @@ def handle_api_1_0_get_request(request, values):
         return handle_api_list_api_keys(values)
     if request == 'limits':
         return handle_api_limits_request(values)
+    if request == 'setting':
+        return handle_api_settings_request(values)
     return False, ""
 
 def handle_api_1_0_post_request(request, values):
@@ -764,6 +798,8 @@ def handle_api_1_0_post_request(request, values):
         return handle_api_create_api_key(values)
     if request == 'create_limits':
         return handle_api_create_limits(values)
+    if request == 'create_setting':
+        return handle_api_create_setting(values)
     return False, ""
 
 def handle_api_1_0_delete_request(request, values):

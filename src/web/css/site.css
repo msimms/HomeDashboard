@@ -181,6 +181,7 @@ tr:first-child {
     font-weight: 400;
     line-height: 20px;
     padding: 16px 16px 16px 16px;
+    margin: 8px;
     transition: all 20ms ease-out;
     vertical-align: middle;
 }
