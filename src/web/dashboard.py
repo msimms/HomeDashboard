@@ -662,7 +662,7 @@ def handle_api_full_scale(values):
 def handle_api_create_api_key(values):
     """Called when an API request to create an API key is received."""
     # Validate the session cookie.
-    _, user = common_session_check(values)
+    _, user = common_auth_check(values)
 
     # Generate an API key.
     api_key = secrets.token_bytes(256)
@@ -681,7 +681,7 @@ def handle_api_create_api_key(values):
 def handle_api_list_api_keys(values):
     """Called when an API request to list API keys is received."""
     # Validate the session cookie.
-    _, user = common_session_check(values)
+    _, user = common_auth_check(values)
 
     # Connect to the database.
     db = connect_to_db()
@@ -694,7 +694,7 @@ def handle_api_list_api_keys(values):
 def handle_api_create_limits(values):
     """Called when an API request to set sensor limits is received."""
     # Validate the session cookie.
-    _, user = common_session_check(values)
+    _, user = common_auth_check(values)
 
     # Connect to the database.
     db = connect_to_db()
@@ -714,7 +714,7 @@ def handle_api_limits_request(values):
         raise ApiAuthenticationException("Limits key not specified.")
 
     # Validate the session cookie.
-    _, user = common_session_check(values)
+    _, user = common_auth_check(values)
 
     # Connect to the database.
     db = connect_to_db()
@@ -728,7 +728,7 @@ def handle_api_limits_request(values):
 def handle_api_create_setting(values):
     """Called when an API request to create or update a setting is received."""
     # Validate the session cookie.
-    _, user = common_session_check(values)
+    _, user = common_auth_check(values)
 
     # Connect to the database.
     db = connect_to_db()
@@ -745,7 +745,7 @@ def handle_api_settings_request(values):
         raise ApiAuthenticationException("Key not specified.")
 
     # Validate the session cookie.
-    _, user = common_session_check(values)
+    _, user = common_auth_check(values)
 
     # Connect to the database.
     db = connect_to_db()
