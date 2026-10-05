@@ -1,8 +1,9 @@
 // Created by Michael Simms
 
-#include <WiFi.h>
-#include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <HTTPClient.h>
 #include "time.h"
 #include "arduino_secrets.h"
 
@@ -26,6 +27,8 @@ int g_waterSecs = 120;
 // Function prototypes
 void blink(int num_blinks);
 void irrigate(int num_seconds);
+int parseSettingResponse(String response);
+int getSettingSecure(String requestUrl);
 int getSetting(String requestUrl);
 void getSettings();
 void connectWiFi();
@@ -56,12 +59,57 @@ void irrigate(int num_seconds) {
   digitalWrite(PUMP_PIN, LOW);
 }
 
+/// @function parseSettingResponse
+int parseSettingResponse(String response) {
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, response);
+    if (!error) {
+      int value = doc["value"].as<int>();
+      return value;
+    }
+    return -1;
+}
+
+/// @function getSettingSecure
+int getSettingSecure(String requestUrl) {
+  if (WiFi.status() == WL_CONNECTED) {
+
+    // Connect to the client.
+    WiFiClientSecure client;
+    HTTPClient https;
+
+    client.setInsecure();
+    if (https.begin(client, requestUrl)) {
+      Serial.println("[INFO] Sending the request...");
+      int httpCode = https.GET();
+      if (httpCode > 0) {
+        Serial.print("[INFO] HTTP status: ");
+        Serial.println(httpCode);
+        String response = https.getString();
+        Serial.print("[INFO] HTTP response: ");
+        Serial.println(response);
+        return parseSettingResponse(response);
+      }
+      else {
+        Serial.print("[ERROR] HTTPS GET failed: ");
+        Serial.println(https.errorToString(httpCode));
+      }
+      https.end();
+    }
+    else {
+      Serial.println("[ERROR] Unable to start HTTPS connection");
+    }
+  }
+  return -1;
+}
+
 /// @function getSetting
 int getSetting(String requestUrl) {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
 
     // Send the GET request
+    Serial.println("[INFO] Sending the request...");
     Serial.println(requestUrl);
     http.begin(requestUrl);
     
@@ -71,15 +119,9 @@ int getSetting(String requestUrl) {
       String response = http.getString();
       Serial.println(httpResponseCode);
       Serial.println(response);
-
-      JsonDocument doc;
-      DeserializationError error = deserializeJson(doc, response);
-      if (!error) {
-        int value = doc["value"].as<int>();
-        return value;
-      }
+      return parseSettingResponse(response);
     } else {
-      Serial.print("Error on sending GET: ");
+      Serial.print("[ERROR] Error on sending GET: ");
       Serial.println(httpResponseCode);
     }
     
@@ -94,23 +136,27 @@ void getSettings() {
   String requestUrl = STATUS_URL;
   requestUrl.concat("/api/1.0/setting?key=irrigation_time&api_key=");
   requestUrl.concat(API_KEY);
-  int temp = getSetting(requestUrl);
+  int temp = getSettingSecure(requestUrl);
   if (temp >= 0 && temp < 24) {
+    Serial.print("[INFO] Setting watering hour to: ");
+    Serial.println(temp);
     g_waterHour = temp;
   }
 
   requestUrl = STATUS_URL;
   requestUrl.concat("/api/1.0/setting?key=irrigation_duration&api_key=");
   requestUrl.concat(API_KEY);
-  temp = getSetting(requestUrl);
+  temp = getSettingSecure(requestUrl);
   if (temp >= 0 && temp < 86400) {
+    Serial.print("[INFO] Setting watering duration to: ");
+    Serial.println(temp);
     g_waterSecs = temp;
   }
 }
 
 /// @function connectWiFi
 void connectWiFi() {
-  Serial.print("Connecting to Wi-Fi");
+  Serial.print("[INFO] Connecting to Wi-Fi");
   WiFi.begin(SECRET_SSID, SECRET_PASS);
 
   while (WiFi.status() != WL_CONNECTED) {
@@ -119,13 +165,13 @@ void connectWiFi() {
   }
 
   Serial.println();
-  Serial.println("Wi-Fi connected!");
+  Serial.println("[INFO] Wi-Fi connected!");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
   // Get time from NTP.
   configTime(0, 0, "pool.ntp.org");
-  Serial.println("Time synchronized!");
+  Serial.println("[INFO] Time synchronized!");
 
   // Set local timezone.
   setenv("TZ", TIMEZONE, 1);
@@ -138,7 +184,7 @@ void setup() {
   Serial.begin(115200);
 
   // Make sure the pump is off.
-  Serial.println("Disabling pump!");
+  Serial.println("[INFO] Disabling pump!");
   pinMode(PUMP_PIN, OUTPUT);
   digitalWrite(PUMP_PIN, LOW);
 
@@ -153,17 +199,17 @@ void loop() {
 
   // See if it's time to run the irrigation.
   if (getLocalTime(&timeinfo)) {
-    Serial.printf("%02d:%02d:%02d\n",
+    Serial.printf("[INFO] Current Time: %02d:%02d:%02d\n",
                   timeinfo.tm_hour,
                   timeinfo.tm_min,
                   timeinfo.tm_sec);
 
     if (timeinfo.tm_hour == g_waterHour && timeinfo.tm_min == 0) {
-      Serial.println("Starting irrigation!");
+      Serial.println("[INFO] Starting irrigation!");
       irrigate(g_waterSecs);
-      Serial.println("Irrigation complete!");
+      Serial.println("[INFO] Irrigation complete!");
     }
   }
 
-  delay(1000);
+  delay(5000);
 }
