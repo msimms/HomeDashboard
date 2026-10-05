@@ -56,6 +56,7 @@ void irrigate(int num_seconds) {
   digitalWrite(PUMP_PIN, LOW);
 }
 
+/// @function getSetting
 int getSetting(String requestUrl) {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;

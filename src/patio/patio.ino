@@ -21,6 +21,25 @@
 // The "pin" for the onboard LED.
 int LED = 13;
 
+// The number of samples that will be averaged together for each measurement.
+#define NUM_SAMPLES 10
+
+// Function prototypes
+float mapfloat(float x, float in_min, float in_max, float out_min, float out_max);
+float avg_buffer(float* buf, size_t len);
+float read_anemometer();
+void read_temperature_and_humidity_from_am2315c(float* temp_c, float* humidity);
+float read_soil_moisture_sensor(pin_size_t pin);
+float read_soil_moisture_sensor_1();
+float read_soil_moisture_sensor_2();
+void print_wifi_status();
+void post_status(String str);
+void setup_anemometer();
+void setup_am2315c();
+void dht_reinit();
+void blink(int num_blinks);
+void setup();
+
 // Temperature and humidity sensor.
 AM2315C DHT(&Wire);
 
@@ -32,6 +51,15 @@ AM2315C DHT(&Wire);
 /// @function mapfloat
 float mapfloat(float x, float in_min, float in_max, float out_min, float out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+/// @function avg_buffer
+float avg_buffer(float* buf, size_t len) {
+  float total = 0.0;
+  for (int i = 0; i < len; ++i) {
+    total += buf[i];
+  }
+  return total / (float)len;
 }
 
 /// @function read_anemometer
@@ -226,31 +254,55 @@ void setup() {
 /// @function loop
 void loop() {
 
-  // Turn the LED on.
-  digitalWrite(LED, HIGH);
+  float buf_wind_speed_ms[NUM_SAMPLES] = {0};
+  float buf_temp_c[NUM_SAMPLES] = {0};
+  float buf_humidity[NUM_SAMPLES] = {0};
+  float buf_moisture1[NUM_SAMPLES] = {0};
+  float buf_moisture2[NUM_SAMPLES] = {0};
 
-  // Read wind speed.
-  Serial.println("[INFO] Reading wind speed...");
-  float wind_speed_ms = read_anemometer();
+  for (int i = 0; i < NUM_SAMPLES; ++i) {
 
-  // Read temperature and humidity.
-  float temp_c = 0.0;
-  float humidity = 0.0;
-  if (DHT.isConnected()) {
-    Serial.println("[INFO] Reading temperature and humidity...");
-    read_temperature_and_humidity_from_am2315c(&temp_c, &humidity);
+    // Turn the LED on.
+    digitalWrite(LED, HIGH);
+
+    // Read wind speed.
+    Serial.println("[INFO] Reading wind speed...");
+    float wind_speed_ms = read_anemometer();
+    buf_wind_speed_ms[i] = wind_speed_ms;
+
+    // Read temperature and humidity.
+    float temp_c = 0.0;
+    float humidity = 0.0;
+    if (DHT.isConnected()) {
+      Serial.println("[INFO] Reading temperature and humidity...");
+      read_temperature_and_humidity_from_am2315c(&temp_c, &humidity);
+      buf_temp_c[i] = temp_c;
+      buf_humidity[i] = humidity;
+    }
+    else {
+      Serial.println("[ERROR] The temperature and humidity sensor is not connected!");
+    }
+
+    // Read soil moisture sensor.
+    Serial.println("[INFO] Reading soil moisture...");
+    float moisture1 = read_soil_moisture_sensor_1();
+    float moisture2 = read_soil_moisture_sensor_2();
+    buf_moisture1[i] = moisture1;
+    buf_moisture2[i] = moisture2;
+
+    // Turn the LED off.
+    digitalWrite(LED, LOW);
+
+    // Wait a second.
+    delay(1000);
   }
-  else {
-    Serial.println("[ERROR] The temperature and humidity sensor is not connected!");
-  }
 
-  // Read soil moisture sensor.
-  Serial.println("[INFO] Reading soil moisture...");
-  float moisture1 = read_soil_moisture_sensor_1();
-  float moisture2 = read_soil_moisture_sensor_2();
-
-  // Turn the LED off.
-  digitalWrite(LED, LOW);
+  // Calculate the averages.
+  wind_speed_ms = avg_buffer(buf_wind_speed_ms, NUM_SAMPLES);
+  temp_c = avg_buffer(buf_temp_c, NUM_SAMPLES);
+  humidity = avg_buffer(buf_humidity, NUM_SAMPLES);
+  moisture1 = avg_buffer(buf_moisture1, NUM_SAMPLES);
+  moisture2 = avg_buffer(buf_moisture2, NUM_SAMPLES);
 
   // Success! Blink the LED to show that we're happy.
   blink(3);
@@ -271,10 +323,6 @@ void loop() {
   // Success! Blink the LED to show that we're happy.
   blink(5);
 
-  // Wait for ten minutes (minus the time spent blinking).
-  //delay(10000);
-  delay(600000 - 5000 - 3000);
-
   // Re-init I2C on wake from sleep.
-  dht_reinit();
+  //dht_reinit();
 }
