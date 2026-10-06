@@ -195,21 +195,26 @@ void setup() {
 
 /// @function loop
 void loop() {
-  struct tm timeinfo;
 
-  // See if it's time to run the irrigation.
-  if (getLocalTime(&timeinfo)) {
-    Serial.printf("[INFO] Current Time: %02d:%02d:%02d\n",
-                  timeinfo.tm_hour,
-                  timeinfo.tm_min,
-                  timeinfo.tm_sec);
+  // Run for half an hour and then check for new settings.
+  for (int i = 0; i < 360; ++i) {
+    struct tm timeinfo;
 
-    if (timeinfo.tm_hour == g_waterHour && timeinfo.tm_min == 0) {
-      Serial.println("[INFO] Starting irrigation!");
-      irrigate(g_waterSecs);
-      Serial.println("[INFO] Irrigation complete!");
+    // See if it's time to run the irrigation.
+    if (getLocalTime(&timeinfo)) {
+      Serial.printf("[INFO] Current Time: %02d:%02d:%02d\n",
+                    timeinfo.tm_hour,
+                    timeinfo.tm_min,
+                    timeinfo.tm_sec);
+
+      if (timeinfo.tm_hour == g_waterHour && timeinfo.tm_min == 0) {
+        Serial.println("[INFO] Starting irrigation!");
+        irrigate(g_waterSecs);
+        Serial.println("[INFO] Irrigation complete!");
+      }
     }
-  }
 
-  delay(5000);
+    delay(5000);
+  }
+  getSettings();
 }
