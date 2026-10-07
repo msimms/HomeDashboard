@@ -48,6 +48,7 @@ g_root_dir = ""
 g_root_url = ""
 g_db_uri = ""
 g_tempmod_dir = "tempmod"
+g_pulse_pump = False
 
 # Files and directories
 ERROR_LOG = 'error.log'
@@ -76,6 +77,7 @@ PARAM_TIMESTAMP = "ts"
 PARAM_NAME = "name"
 PARAM_LIMITS_KEY = "key"
 PARAM_SETTINGS_KEY = "key"
+PARAM_SETTINGS_VALUE_KEY = "key"
 
 def login_required(function_to_protect):
     @functools.wraps(function_to_protect)
@@ -726,15 +728,31 @@ def handle_api_limits_request(values):
     return True, result
 
 def handle_api_create_setting(values):
+    global g_pulse_pump
+
     """Called when an API request to create or update a setting is received."""
+    # Check for required parameters.
+    if PARAM_SETTINGS_KEY not in values:
+        raise ApiAuthenticationException("Settings key not specified.")
+    if PARAM_SETTINGS_VALUE_KEY not in values:
+        raise ApiAuthenticationException("Settings value not specified.")
+
     # Validate the session cookie.
     _, user = common_auth_check(values)
+
+    # Extract the settings.
+    key = values[PARAM_SETTINGS_KEY]
+
+    # Special case, the pump pulse: irrigation_pulse
+    if key == 'irrigation_pulse':
+        g_pulse_pump = True
+        return True, ""
 
     # Connect to the database.
     db = connect_to_db()
 
     # Store.
-    db.create_setting(values['key'], values['value'])
+    db.create_setting(key, values[PARAM_SETTINGS_VALUE_KEY])
 
     return True, ""
 
@@ -753,6 +771,20 @@ def handle_api_settings_request(values):
     # Query the database.
     value = db.retrieve_setting(values[PARAM_SETTINGS_KEY])
     result = { 'value': value }
+
+    return True, result
+
+def handle_api_is_pump_manually_enabled_request(values):
+    global g_pulse_pump
+
+    """Called when an API request to is received to check the manual status of the pump."""
+    """The user interface allows the user to manually enable the pump."""
+    # Validate the session cookie.
+    _, user = common_auth_check(values)
+
+    # Build the response.
+    result = { 'value': g_pulse_pump }
+    g_pulse_pump = False
 
     return True, result
 
@@ -776,6 +808,8 @@ def handle_api_1_0_get_request(request, values):
         return handle_api_limits_request(values)
     if request == 'setting':
         return handle_api_settings_request(values)
+    if request == 'is_pump_manually_enabled':
+        return handle_api_is_pump_manually_enabled_request(values)
     return False, ""
 
 def handle_api_1_0_post_request(request, values):

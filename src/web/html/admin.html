@@ -150,6 +150,11 @@
         update_settings(IRRIGATION_DURATION_KEY, get_element_text('irrigation_time_duration'));
     }
 
+    /// @function pulse_the_pump
+    function pulse_the_pump() {
+        update_settings(IRRIGATION_PULSE_KEY, 'True');
+    }
+
     /// @function tare_scale
     function tare_scale() {
         let api_url = "/api/1.0/tare_scale";
@@ -348,6 +353,7 @@
     </div>
     <div>
         <button type="button" onclick="update_irrigation()">Update</button>
+        <button type="button" onclick="pulse_the_pump()">Pulse</button>
     </div>
 </div>
 <!-- Irrigation End -->

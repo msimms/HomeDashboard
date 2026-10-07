@@ -27,6 +27,7 @@ const CO2_KEY = "co2_ppm"
 const TEMP_KEY = "temp_c"
 const IRRIGATION_TIME_KEY = "irrigation_time"
 const IRRIGATION_DURATION_KEY = "irrigation_duration"
+const IRRIGATION_PULSE_KEY = "irrigation_pulse"
 
 /// @function is_numeric
 function is_numeric(num) {
