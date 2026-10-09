@@ -27,11 +27,13 @@ int g_waterSecs = 120;
 // Function prototypes
 void blink(int num_blinks);
 void irrigate(int num_seconds);
-int parseSettingResponse(String response);
-int getSettingSecure(String requestUrl);
-int getSetting(String requestUrl);
+int parseIntResponse(String response);
+int parseBoolResponse(String response);
+int getSettingSecure(String requestUrl, int (*parseFunction)(String));
+int getSetting(String requestUrl, int (*parseFunction)(String));
 void getSettings();
 void connectWiFi();
+int isPumpManuallyEnabled();
 void setup();
 void loop();
 
@@ -59,8 +61,8 @@ void irrigate(int num_seconds) {
   digitalWrite(PUMP_PIN, LOW);
 }
 
-/// @function parseSettingResponse
-int parseSettingResponse(String response) {
+/// @function parseIntResponse
+int parseIntResponse(String response) {
     JsonDocument doc;
     DeserializationError error = deserializeJson(doc, response);
     if (!error) {
@@ -70,8 +72,19 @@ int parseSettingResponse(String response) {
     return -1;
 }
 
+/// @function parseBoolResponse
+int parseBoolResponse(String response) {
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, response);
+    if (!error) {
+      bool value = doc["value"];
+      return value ? 1 : 0;
+    }
+    return 0;
+}
+
 /// @function getSettingSecure
-int getSettingSecure(String requestUrl) {
+int getSettingSecure(String requestUrl, int (*parseFunction)(String)) {
   if (WiFi.status() == WL_CONNECTED) {
 
     // Connect to the client.
@@ -82,16 +95,16 @@ int getSettingSecure(String requestUrl) {
     if (https.begin(client, requestUrl)) {
       Serial.println("[INFO] Sending the request...");
       int httpCode = https.GET();
-      if (httpCode > 0) {
+      if (httpCode == 200) {
         Serial.print("[INFO] HTTP status: ");
         Serial.println(httpCode);
         String response = https.getString();
         Serial.print("[INFO] HTTP response: ");
         Serial.println(response);
-        return parseSettingResponse(response);
+        return parseFunction(response);
       }
       else {
-        Serial.print("[ERROR] HTTPS GET failed: ");
+        Serial.print("[ERROR] HTTPS GET failed with status ");
         Serial.println(https.errorToString(httpCode));
       }
       https.end();
@@ -104,13 +117,12 @@ int getSettingSecure(String requestUrl) {
 }
 
 /// @function getSetting
-int getSetting(String requestUrl) {
+int getSetting(String requestUrl, int (*parseFunction)(String)) {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
 
     // Send the GET request
     Serial.println("[INFO] Sending the request...");
-    Serial.println(requestUrl);
     http.begin(requestUrl);
     
     // Send and read the response.
@@ -119,7 +131,7 @@ int getSetting(String requestUrl) {
       String response = http.getString();
       Serial.println(httpResponseCode);
       Serial.println(response);
-      return parseSettingResponse(response);
+      return parseFunction(response);
     } else {
       Serial.print("[ERROR] Error on sending GET: ");
       Serial.println(httpResponseCode);
@@ -133,25 +145,37 @@ int getSetting(String requestUrl) {
 
 /// @function getSettings
 void getSettings() {
+
+  // Irrigation Time
   String requestUrl = STATUS_URL;
   requestUrl.concat("/api/1.0/setting?key=irrigation_time&api_key=");
   requestUrl.concat(API_KEY);
-  int temp = getSettingSecure(requestUrl);
+  int temp = getSettingSecure(requestUrl, parseIntResponse);
   if (temp >= 0 && temp < 24) {
     Serial.print("[INFO] Setting watering hour to: ");
     Serial.println(temp);
     g_waterHour = temp;
   }
 
+  // irrigation Duration (Seconds)
   requestUrl = STATUS_URL;
   requestUrl.concat("/api/1.0/setting?key=irrigation_duration&api_key=");
   requestUrl.concat(API_KEY);
-  temp = getSettingSecure(requestUrl);
+  temp = getSettingSecure(requestUrl, parseIntResponse);
   if (temp >= 0 && temp < 86400) {
     Serial.print("[INFO] Setting watering duration to: ");
     Serial.println(temp);
     g_waterSecs = temp;
   }
+}
+
+/// @function isPumpManuallyEnabled
+// User wants to manually enable the pump
+int isPumpManuallyEnabled() {
+  String requestUrl = STATUS_URL;
+  requestUrl.concat("/api/1.0/is_pump_manually_enabled?api_key=");
+  requestUrl.concat(API_KEY);
+  return getSettingSecure(requestUrl, parseBoolResponse);
 }
 
 /// @function connectWiFi
@@ -197,7 +221,7 @@ void setup() {
 void loop() {
 
   // Run for half an hour and then check for new settings.
-  for (int i = 0; i < 360; ++i) {
+  for (int i = 0; i < 180; ++i) {
     struct tm timeinfo;
 
     // See if it's time to run the irrigation.
@@ -212,9 +236,18 @@ void loop() {
         irrigate(g_waterSecs);
         Serial.println("[INFO] Irrigation complete!");
       }
+      else if (isPumpManuallyEnabled() == 1) {
+        Serial.println("[INFO] Starting irrigation manually!");
+        irrigate(10);
+        Serial.println("[INFO] Irrigation complete!");
+      }
     }
 
-    delay(5000);
+    delay(10000);
+
+    // Make sure it's off.
+    Serial.println("[INFO] Confirming pump is off!");
+    digitalWrite(PUMP_PIN, LOW);
   }
   getSettings();
 }

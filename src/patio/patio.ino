@@ -142,7 +142,7 @@ void post_status(String str) {
   WiFiSSLClient client;
 
   // Connect to the client.
-  Serial.println("[INFO] Sending status...");
+  Serial.println("[INFO] Establishing an SSL connection...");
   if (client.connectSSL(STATUS_URL, STATUS_PORT)) {
     Serial.println("[INFO] Connected!");
 
