@@ -52,12 +52,7 @@ void blink(int num_blinks) {
 /// Blinks the LED while running the pump.
 void irrigate(int num_seconds) {
   digitalWrite(PUMP_PIN, HIGH);
-  for (int i = 0; i < num_seconds; ++i) {
-    digitalWrite(LED, HIGH);
-    delay(500);
-    digitalWrite(LED, LOW);
-    delay(500);
-  }
+  delay(num_seconds * 1000);
   digitalWrite(PUMP_PIN, LOW);
 }
 
@@ -249,5 +244,8 @@ void loop() {
     Serial.println("[INFO] Confirming pump is off!");
     digitalWrite(PUMP_PIN, LOW);
   }
+
+  // Refresh the settings.
+  Serial.println("[INFO] Updating settings.");
   getSettings();
 }
