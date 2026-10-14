@@ -298,11 +298,11 @@ void loop() {
   }
 
   // Calculate the averages.
-  wind_speed_ms = avg_buffer(buf_wind_speed_ms, NUM_SAMPLES);
-  temp_c = avg_buffer(buf_temp_c, NUM_SAMPLES);
-  humidity = avg_buffer(buf_humidity, NUM_SAMPLES);
-  moisture1 = avg_buffer(buf_moisture1, NUM_SAMPLES);
-  moisture2 = avg_buffer(buf_moisture2, NUM_SAMPLES);
+  float wind_speed_ms = avg_buffer(buf_wind_speed_ms, NUM_SAMPLES);
+  float temp_c = avg_buffer(buf_temp_c, NUM_SAMPLES);
+  float humidity = avg_buffer(buf_humidity, NUM_SAMPLES);
+  float moisture1 = avg_buffer(buf_moisture1, NUM_SAMPLES);
+  float moisture2 = avg_buffer(buf_moisture2, NUM_SAMPLES);
 
   // Success! Blink the LED to show that we're happy.
   blink(3);
