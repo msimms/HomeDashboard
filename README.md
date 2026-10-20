@@ -90,6 +90,8 @@ Build and upload using the Arduino IDE. The target board is the Arduino Nano 33 
 
 Install the required libraries from within the Arduino IDE by going to Sketch > Include Library > Manage Libraries.
 * Search for "AM2315C" and install the library.
+* Search for "NTPClient" and install the library.
+* Search for "ArduinoHttpClient" and install the library.
 
 ## Scale
 
@@ -123,6 +125,10 @@ TODO
 ### Software
 
 Copy arduino_secrets_example.h to arduino_secrets.h and fill in the values for your setup.
+
+Install the required libraries from within the Arduino IDE by going to Sketch > Include Library > Manage Libraries.
+* Search for "HX711" and install the library.
+* Search for "ArduinoHttpClient" and install the library.
 
 ## Thermocouple
 

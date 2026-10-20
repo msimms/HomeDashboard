@@ -2,8 +2,12 @@
 
 #include <AM2315C.h>
 #include <SPI.h>
+#include <NTPClient.h>
+#include <RTC.h>
 #include <Wire.h>
-#include <WiFiNINA.h>
+#include <WiFiS3.h>
+#include <ArduinoHttpClient.h>
+#include "Arduino_LED_Matrix.h" // Include the LED_Matrix library
 #include "arduino_secrets.h" 
 
 #define REF_VOLTAGE 5.0
@@ -24,24 +28,19 @@ int LED = 13;
 // The number of samples that will be averaged together for each measurement.
 #define NUM_SAMPLES 10
 
-// Function prototypes
-float mapfloat(float x, float in_min, float in_max, float out_min, float out_max);
-float avg_buffer(float* buf, size_t len);
-float read_anemometer();
-void read_temperature_and_humidity_from_am2315c(float* temp_c, float* humidity);
-float read_soil_moisture_sensor(pin_size_t pin);
-float read_soil_moisture_sensor_1();
-float read_soil_moisture_sensor_2();
-void print_wifi_status();
-void post_status(String str);
-void setup_anemometer();
-void setup_am2315c();
-void dht_reinit();
-void blink(int num_blinks);
-void setup();
-
 // Temperature and humidity sensor.
-AM2315C DHT(&Wire);
+AM2315C* g_DHT = NULL;
+
+// Create an instance of the ArduinoLEDMatrix class.
+ArduinoLEDMatrix g_matrix;
+
+// SSL
+WiFiSSLClient g_ssl;
+HttpClient g_client(g_ssl, STATUS_URL, STATUS_PORT);
+
+// NTP
+WiFiUDP g_udp;
+NTPClient g_time_client(g_udp, "pool.ntp.org", 0, 60000); // Update every 60s
 
 // RED    -------- | VDD             |
 // YELLOW -------- | SDA    AM2315C  |
@@ -76,14 +75,16 @@ float read_anemometer() {
 
 /// @function read_temperature_and_humidity_from_am2315c
 void read_temperature_and_humidity_from_am2315c(float* temp_c, float* humidity) {
-  int status = DHT.read();
-  if (status == 0) {
-    (*temp_c) = DHT.getTemperature();
-    (*humidity) = DHT.getHumidity();
-  }
-  else {
-    Serial.print("[ERROR] DHT.read() returned ");
-    Serial.println(status);
+  if (g_DHT) {
+    int status = g_DHT->read();
+    if (status == 0) {
+      (*temp_c) = g_DHT->getTemperature();
+      (*humidity) = g_DHT->getHumidity();
+    }
+    else {
+      Serial.print("[ERROR] g_DHT->read() returned ");
+      Serial.println(status);
+    }
   }
 }
 
@@ -104,6 +105,52 @@ float read_soil_moisture_sensor_2() {
   return read_soil_moisture_sensor(MOISTURE_SENSOR_2);
 }
 
+/// @function setup_wifi
+void setup_wifi() {
+
+  // Check the firmware version.
+  String fv = WiFi.firmwareVersion();
+  if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
+    Serial.println("[INFO] Upgrade the firmware!");
+  }
+
+  // Make sure we were given a network to connect to.
+  if (strlen(SECRET_SSID) == 0) {
+    Serial.println("[ERROR] SSID not specified!");
+    return;
+  }
+
+  // (Re)connect to Wifi.
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("[INFO] Connecting to WiFi...");
+    Serial.print("[INFO] SSID: ");
+    Serial.println(SECRET_SSID);
+
+    WiFi.begin(SECRET_SSID, SECRET_PASS);
+
+    // Wait until we're connected.
+    unsigned long t0 = millis();
+    while (WiFi.status() != WL_CONNECTED && (millis() - t0) < 15000) {
+      delay(250);
+      Serial.print(".");
+    }
+    Serial.println();
+
+    // Sync RTC.
+    Serial.println("[INFO] Syncing time...");
+    g_time_client.begin();
+    g_time_client.update();
+    unsigned long epoch_time = g_time_client.getEpochTime();
+    RTCTime rtc_time(epoch_time);
+    RTC.setTime(rtc_time);
+
+    Serial.println("[INFO] RTC synced with NTP!");
+  }
+  else {
+    Serial.println("[INFO] Already connected to WiFi!");
+  }
+}
+
 /// @function print_wifi_status
 void print_wifi_status() {
 
@@ -118,68 +165,52 @@ void print_wifi_status() {
 
   // Print the received signal strength.
   long rssi = WiFi.RSSI();
-  Serial.print("[INFO] Signal strength (RSSI):");
+  Serial.print("[INFO] Signal strength (RSSI): ");
   Serial.print(rssi);
   Serial.println(" dBm");
 }
 
+
 /// @function post_status
-void post_status(String str) {
+void post_status(String body) {
 
-  // Attempt to connect to Wi-Fi network:
-  Serial.println("[INFO] Connecting to WiFi...");
+  // (Re)connect to Wifi.
+  setup_wifi();
+
+  // Are we connected?
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.print("[INFO] Attempting to connect to the network: ");
-    Serial.println(SECRET_SSID);
-    int wifi_status = WiFi.begin(SECRET_SSID, SECRET_PASS);
-
-    // Wait a few seconds for connection.
-    delay(5000);
+    Serial.println("[ERROR] WiFi not connected.");
+    Serial.println(WiFi.status());
+    return;
   }
 
-  // Network is connected....
-  Serial.println("[INFO] Wifi connected!");
-  WiFiSSLClient client;
+  // Did we get an IP address from the DHCP server?
+  Serial.println("[INFO] WiFi connected!");
+  Serial.print("[INFO] IP: ");
+  Serial.println(WiFi.localIP());
 
-  // Connect to the client.
-  Serial.println("[INFO] Establishing an SSL connection...");
-  if (client.connectSSL(STATUS_URL, STATUS_PORT)) {
-    Serial.println("[INFO] Connected!");
+  // Print the time.
+  RTCTime current_time;
+  RTC.getTime(current_time);
+  Serial.print("[INFO] Current time: ");
+  Serial.println(String(current_time.getHour()) + ":" + String(current_time.getMinutes()) + ":" + String(current_time.getSeconds()));
 
-    // Send the HTTP header
-    client.print(String("POST https://") + STATUS_URL + ("/api/1.0/update_status HTTP/1.1\r\n"));
-    client.print("Host: mikesimms.info\r\n");
-    client.print("User-Agent: Nano33IoT/1.0\r\n");
-    client.print("Content-Type: application/json; charset=utf-8\r\n");
-    client.print(String("Content-Length: ") + str.length() + "\r\n");
-    client.print("Connection: close\r\n");
-    client.print("\r\n"); // end of headers
+  // Start an HTTP session.
+  g_client.setHttpResponseTimeout(60000);
+  Serial.println("[INFO] Sending HTTPS POST...");
+  int err = g_client.post("/api/1.0/update_status", "application/json", body);
+  Serial.print("post() returned: ");
+  Serial.println(err);
 
-    // Send the payload.
-    client.println(str);
+  int statusCode = g_client.responseStatusCode();
+  Serial.print("[INFO] HTTP Status Code: ");
+  Serial.println(statusCode);
 
-    // Make sure it's sent.
-    client.flush();
-    Serial.println("[INFO] Status sent!");
+  String response = g_client.responseBody();
+  Serial.print("[INFO] HTTP Response Body: ");
+  Serial.println(response);
 
-    // Read the response.
-    Serial.println("[INFO] Reading the response...");
-    unsigned long timeout = millis();
-    while (client.connected() && millis() - timeout < 5000) {
-      if (client.available()) {
-        String line = client.readStringUntil('\n');
-        Serial.println(line);
-      }
-    }
-
-    Serial.println("[INFO] Done sending status!");
-  } else {
-    Serial.println("[INFO] Error connecting to the server!");
-    print_wifi_status();
-  }
-  client.stop();
-
-  WiFi.end();
+  g_client.stop();
 }
 
 /// @function setup_anemometer
@@ -193,33 +224,26 @@ void setup_anemometer() {
 void setup_am2315c() {
   Serial.println("[INFO] Setting up the AM2315...");
 
-  Wire.begin();
-  Wire.setClock(100000);  // 100 kHz
-#if defined(WIRE_HAS_TIMEOUT)
-  Wire.setWireTimeout(2500, true);
-#endif
-
   // Use external resistors instead of the internal pullups.
   pinMode(A4, INPUT_PULLUP);
   pinMode(A5, INPUT_PULLUP);
 
   delay(5);
 
-  if (DHT.begin()) {
-    delay(1000);
-  }
-  else {
-    Serial.println("[ERROR] Sensor not found. Check wiring!");
+  g_DHT = new AM2315C(&Wire);
+  if (g_DHT) {
+    //g_DHT->resetSensor();
+
+    if (g_DHT->begin()) {
+      Serial.println("[INFO] AM2315C sensor started!");
+      delay(1000);
+    }
+    else {
+      Serial.println("[ERROR] AM2315C sensor not found. Check wiring!");
+    }
   }
 
-  Serial.println("[INFO] Done setting up the AM2315...");
-}
-
-/// @function dht_reinit
-void dht_reinit() {
-  Wire.end();
-  delay(5);
-  setup_am2315c();
+  Serial.println("[INFO] Done setting up the AM2315C...");
 }
 
 /// @function blink
@@ -238,22 +262,41 @@ void setup() {
 
   // Initialize serial and wait for port to open.
   Serial.begin(9600);
-  delay(100);
+  // Wait for the serial interface.
+  while (!Serial) {
+    delay(10);
+  }
   Serial.println("[INFO] Initializing....");
 
   // Set the LED as output.
   pinMode(LED_BUILTIN, OUTPUT);
+
+  // Initialize the I2C interface.
+  Wire.begin();
+
+  // Start the real time clock.
+  RTC.begin();
 
   // Initialize the anemometer.
   setup_anemometer();
 
   // Initialize the AM2315C.
   setup_am2315c();
+
+  // Initialize the UNO R4's built-in display.
+  g_matrix.begin();
+
+  // Connect to the wifi network.
+  setup_wifi();
+
+  // Make the onboard LED panel display a happy face.
+  g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
 }
 
 /// @function loop
 void loop() {
 
+  // Average several samples together.
   float buf_wind_speed_ms[NUM_SAMPLES] = {0};
   float buf_temp_c[NUM_SAMPLES] = {0};
   float buf_humidity[NUM_SAMPLES] = {0};
@@ -273,7 +316,7 @@ void loop() {
     // Read temperature and humidity.
     float temp_c = 0.0;
     float humidity = 0.0;
-    if (DHT.isConnected()) {
+    if (g_DHT && g_DHT->isConnected()) {
       Serial.println("[INFO] Reading temperature and humidity...");
       read_temperature_and_humidity_from_am2315c(&temp_c, &humidity);
       buf_temp_c[i] = temp_c;
@@ -309,7 +352,7 @@ void loop() {
 
   // Format the output.
   char buff[800];
-  if (DHT.isConnected()) {
+  if (g_DHT->isConnected()) {
     snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"patio_monitor\", \"api_key\": \"%s\", \"wind speed ms\": %f, \"temperature\": %f, \"humidity\": %f, \"moisture_sensor_1\": %f, \"moisture_sensor_2\": %f}", API_KEY, wind_speed_ms, temp_c, humidity, moisture1, moisture2);
   }
   else {

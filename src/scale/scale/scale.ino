@@ -502,11 +502,13 @@ void setup() {
 
   // Initialize the UNO R4's built-in display.
   g_matrix.begin();
-  g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
 
   // Connect to the wifi network.
   setup_wifi();
   print_wifi_status();
+
+  // Make the onboard LED panel display a happy face.
+  g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
 }
 
 /// @function loop
