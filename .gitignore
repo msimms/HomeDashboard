@@ -30,4 +30,7 @@ DerivedData
 # FreeCAD
 *.FCBak
 
+# macOS
+.DS_Store
+
 arduino_secrets.h
