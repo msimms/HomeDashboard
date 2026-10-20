@@ -1,10 +1,10 @@
 # Home Dashboard
 
-A collection of projects for monitoring things around the house. In other words, a smart home that lives on your own infrastructure. The motivation for sharing this is so that someone that wants to build their own home dashboard (web app and sensors) can use this to get started.
+This is a collection of projects for monitoring things around the house. In other words, a smart home that lives on your own infrastructure. The motivation for sharing this is so that anyone that wants to build their own home dashboard (web app and sensors) can use this to get started. Nothing here currently has the ability to integrate with Home Assistant, or anything similar. That may change in the future.
 
 ## Indoor Air Quality Microcontroller
 
-This measures CO<sup>2</sup>, temperature, humidity, VOC, and VOC index and reports it to the web app.
+This measures CO<sup>2</sup>, temperature, humidity, VOC, and VOC index and logs it to a database.
 
 ### Hardware
 
@@ -15,12 +15,12 @@ This measures CO<sup>2</sup>, temperature, humidity, VOC, and VOC index and repo
 
 ### Wiring
 
-Pin | |
--- | -- |
-GND | Sensor 1 GND -> Sensor 2 GND -> Screen GND
+Pin  |
+---- | ----
+GND  | Sensor 1 GND -> Sensor 2 GND -> Screen GND
 5VDC | Sensor 1 Power -> Sensor 2 Power -> Screen Power
-A4 | Sensor 1 SDA -> Sensor 2 SDA -> Screen SDA
-A5 | Sensor 1 SCL -> Sensor 2 SCL -> Screen SCL
+A4   | Sensor 1 SDA -> Sensor 2 SDA -> Screen SDA
+A5   | Sensor 1 SCL -> Sensor 2 SCL -> Screen SCL
 
 ### Software
 
@@ -29,20 +29,27 @@ Build and upload using the Arduino IDE. The target microprocessor is an Arudino 
 Install the required libraries from within the Arduino IDE by going to Sketch > Include Library > Manage Libraries.
 * Search for "SensirionI2CScd4x" and install the library.
 
-## Patio Microcontroller
+## Patio Microcontroller (Arduino Nano Implementation)
 
-This measures CO<sup>2</sup>, temperature, humidity, and soil moisture. Measurements are sent to the web app.
+This measures wind speed, temperature, humidity, and soil moisture. Measurements are sent to the web app so they can be logged to the database and viewed later.
 
-### Hardware
+### Hardware 
 
 * Arduino Nano 33 IoT - https://www.amazon.com/dp/B07WPFQZQ1
-* Adafruit SCD-41 - True CO2 Temperature and Humidity Sensor
+* Anemometer - https://www.adafruit.com/product/1733
+* Temperature & Humidity - https://www.adafruit.com/product/5182
 * Moisture Sensors - https://www.amazon.com/dp/B0C6XGRKS5
 
 ### Wiring
 
-Pin | |
--- | -- |
+Pin  |
+---- | ----
+A0   | Anemometer voltage
+A1   | Soil sensor 1 voltage
+A2   | Soil sensor 2 voltage
+A4   | AM2315C SDA
+A5   | AM2315C SCL
+GND  | Tie all grounds together
 
 ### Software
 
@@ -50,30 +57,64 @@ Copy arduino_secrets_example.h to arduino_secrets.h and fill in the values for y
 
 Build and upload using the Arduino IDE. The target board is the Arduino Nano 33 IoT.
 
+Install the required libraries from within the Arduino IDE by going to Sketch > Include Library > Manage Libraries.
+* Search for "AM2315C" and install the library.
+
+## Patio Microcontroller (Arduino UNO R4 WiFi)
+
+This measures wind speed, temperature, humidity, and soil moisture. Measurements are sent to the web app so they can be logged to the database and viewed later.
+
+### Hardware 
+
+* Arduino UNO R4 WiFi - https://www.amazon.com/Arduino-UNO-WiFi-ABX00087-Bluetooth/dp/B0C8V88Z9D
+* Anemometer - https://www.adafruit.com/product/1733
+* Temperature & Humidity - https://www.adafruit.com/product/5182
+* Moisture Sensors - https://www.amazon.com/dp/B0C6XGRKS5
+
+### Wiring
+
+Pin  |
+---- | ----
+A0   | Anemometer voltage
+A1   | Soil sensor 1 voltage
+A2   | Soil sensor 2 voltage
+SDA  | AM2315C SDA
+SDC  | AM2315C SCL
+GND  | Tie all grounds together
+
+### Software
+
+Copy arduino_secrets_example.h to arduino_secrets.h and fill in the values for your setup.
+
+Build and upload using the Arduino IDE. The target board is the Arduino Nano 33 IoT.
+
+Install the required libraries from within the Arduino IDE by going to Sketch > Include Library > Manage Libraries.
+* Search for "AM2315C" and install the library.
+
 ## Scale
 
 ### Hardware
 
-* Arudino Uno R4 WiFi
+* Arduino UNO R4 WiFi - https://www.amazon.com/Arduino-UNO-WiFi-ABX00087-Bluetooth/dp/B0C8V88Z9D
 * 4x HX711
 
 ### Wiring
 
-Pin | |
--- | -- |
-GND | Sensor GND
-D4 | DT1
-D5 | SCK1
-D6 | DT2
-D7 | SCK2
-D8 | DT3
-D9 | SCK3
-D10 | DT4
-D11 | SCK4
-GND | Screen GND
+Pin    |
+------ | ------
+GND    | Sensor GND
+D4     | DT1
+D5     | SCK1
+D6     | DT2
+D7     | SCK2
+D8     | DT3
+D9     | SCK3
+D10    | DT4
+D11    | SCK4
+GND    | Screen GND
 3.3VDC | Screen Power
-A4 | Screen SDA
-A5 | Screen SCL
+A4     | Screen SDA
+A5     | Screen SCL
 
 ### Enclosure
 
@@ -92,13 +133,13 @@ Copy arduino_secrets_example.h to arduino_secrets.h and fill in the values for y
 
 ### Wiring
 
-ESP8266 Pin | MAX6675 Pin |
--- | -- |
-3.3VDC | VCC
-GND | GND
-D6 | 12
-D1 | 4
-D5 | 14
+ESP8266 Pin | MAX6675 Pin
+----------- | -----------
+3.3VDC      | VCC
+GND         | GND
+D6          | 12
+D1          | 4
+D5          | 14
 
 ### Software
 
@@ -122,4 +163,4 @@ An alternative to the app is a dashboard website, built using python and flask.
 
 ## Version History
 
-None - still in development
+None - this is a perpetual work in progress
