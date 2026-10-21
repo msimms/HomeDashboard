@@ -130,6 +130,20 @@ Install the required libraries from within the Arduino IDE by going to Sketch > 
 * Search for "HX711" and install the library.
 * Search for "ArduinoHttpClient" and install the library.
 
+## Irrigatiun
+
+### Hardware
+
+* ESP32 WROOM
+* Relay
+* Pump
+
+### Wiring
+
+### Software
+
+Copy arduino_secrets_example.h to arduino_secrets.h and fill in the values for your setup.
+
 ## Thermocouple
 
 ### Hardware
