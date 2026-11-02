@@ -267,17 +267,20 @@
                 const limits = JSON.parse(response_text);
                 let most_recent = values.at(-1);
 
+                // Is there an excess?
                 if ('upper_limit' in limits) {
                     let limit = limits['upper_limit'];
                     if (most_recent.y > limit) {
-                        let msg = key + " is over the limit of " + limit;
+                        let msg = key + " is over the limit of " + limit + " (" + most_recent.y + ")!";
                         maybe_notify(msg);
                     }
                 }
+
+                // Is there not enough?
                 if ('lower_limit' in limits) {
                     let limit = limits['lower_limit'];
                     if (most_recent.y < limit) {
-                        let msg = key + " is under the limit of " + limit;
+                        let msg = key + " is under the limit of " + limit + " (" + most_recent.y + ")!";
                         maybe_notify(msg);
                     }
                 }
@@ -384,11 +387,16 @@
                 for (let record of records) {
                     let ts = record['ts'];
 
-                    temp_readings.push( { x: ts, y: record['temperature'] });
-                    humidity_readings.push( { x: ts, y: record['humidity'] });
-                    wind_speed.push( { x: ts, y: record['wind speed ms'] });
-                    moisture_sensor_1_readings.push( { x: ts, y: record['moisture_sensor_1'] * 100.0 });
-                    moisture_sensor_2_readings.push( { x: ts, y: record['moisture_sensor_2'] * 100.0 });
+                    if ('temperature' in record)
+                        temp_readings.push( { x: ts, y: record['temperature'] });
+                    if ('humidity' in record)
+                        humidity_readings.push( { x: ts, y: record['humidity'] });
+                    if ('wind speed ms' in record)
+                        wind_speed.push( { x: ts, y: record['wind speed ms'] });
+                    if ('moisture_sensor_1' in record)
+                        moisture_sensor_1_readings.push( { x: ts, y: record['moisture_sensor_1'] * 100.0 });
+                    if ('moisture_sensor_2' in record)
+                        moisture_sensor_2_readings.push( { x: ts, y: record['moisture_sensor_2'] * 100.0 });
                 }
 
                 if (temp_readings.length > 0) {
