@@ -1,5 +1,5 @@
 //
-//  DashboardAppApp.swift
+//  DashboardApp.swift
 //  Created by Michael Simms on 2/7/26.
 //
 

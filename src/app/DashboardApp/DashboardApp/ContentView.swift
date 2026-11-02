@@ -22,6 +22,7 @@ struct ContentView: View {
 			VStack() {
 				if let value = self.serverVM.ts {
 					Text(value)
+						.modifier(CommonStyle())
 				}
 			}
 
@@ -30,20 +31,17 @@ struct ContentView: View {
 				.imageScale(.large)
 				.foregroundStyle(.tint)
 			VStack() {
-				HStack() {
-					if let value = self.serverVM.indoorCo2ppm {
-						Text(String(format: "CO\u{00B2} %u ppm", value))
-					}
+				if let value = self.serverVM.indoorCo2ppm {
+					Text(String(format: "CO\u{00B2} %u ppm", value))
+						.modifier(CommonStyle())
 				}
-				HStack() {
-					if let value = self.serverVM.indoorTempC {
-						Text(String(format: "Temperature %.2f \u{00B0}C (%.2f \u{00B0}F)", value, value * 1.8 + 32.0))
-					}
+				if let value = self.serverVM.indoorTempC {
+					Text(String(format: "Temperature %.2f \u{00B0}C (%.2f \u{00B0}F)", value, value * 1.8 + 32.0))
+						.modifier(CommonStyle())
 				}
-				HStack() {
-					if let value = self.serverVM.indoorHumidity {
-						Text(String(format: "Humidity %.2f %%", value))
-					}
+				if let value = self.serverVM.indoorHumidity {
+					Text(String(format: "Humidity %.2f %%", value))
+						.modifier(CommonStyle())
 				}
 			}
 			.padding(10)
@@ -53,37 +51,28 @@ struct ContentView: View {
 				.imageScale(.large)
 				.foregroundStyle(.tint)
 			VStack() {
-				HStack() {
-					if let value = self.serverVM.outdoorTempC {
-						Text(String(format: "Temperature %.2f \u{00B0}C", value))
-					}
+				if let value = self.serverVM.outdoorTempC {
+					Text(String(format: "Temperature %.2f \u{00B0}C", value))
+						.modifier(CommonStyle())
 				}
-				HStack() {
-					if let value = self.serverVM.outdoorHumidity {
-						Text(String(format: "Humidity %.2f %%", value))
-					}
+				if let value = self.serverVM.outdoorHumidity {
+					Text(String(format: "Humidity %.2f %%", value))
+						.modifier(CommonStyle())
 				}
-				HStack() {
-					if let value = self.serverVM.windSpeedMs {
-						Text(String(format: "Wind Speed %.2f m/s", value))
-					}
+				if let value = self.serverVM.windSpeedMs {
+					Text(String(format: "Wind Speed %.2f m/s", value))
+						.modifier(CommonStyle())
 				}
-				HStack() {
-					if let value = self.serverVM.moistureSensor1 {
-						Text(String(format: "Moisture Sensor #1 %.2f", value))
-					}
+				if let value = self.serverVM.moistureSensor1 {
+					Text(String(format: "Moisture Sensor #1 %.2f", value))
+						.modifier(CommonStyle())
 				}
-				HStack() {
-					if let value = self.serverVM.moistureSensor2 {
-						Text(String(format: "Moisture Sensor #2 %.2f", value))
-					}
+				if let value = self.serverVM.moistureSensor2 {
+					Text(String(format: "Moisture Sensor #2 %.2f", value))
+						.modifier(CommonStyle())
 				}
 			}
 			.padding(10)
-
-			HStack() {
-				Spacer()
-			}
 		}
         .padding()
 		.opacity(0.8)

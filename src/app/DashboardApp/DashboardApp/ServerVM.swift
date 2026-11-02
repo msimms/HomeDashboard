@@ -38,7 +38,7 @@ class ServerVM : ObservableObject {
 				self.indoorHumidity = item.humidity
 
 			} catch {
-				// Handle error as needed, e.g., log or update state
+				print("Unable to fetch indoor air quality: \(error.localizedDescription)")
 			}
 		}
 
@@ -53,6 +53,7 @@ class ServerVM : ObservableObject {
 				self.moistureSensor1 = item.moisture_sensor_1
 				self.moistureSensor2 = item.moisture_sensor_2
 			} catch {
+				print("Unable to fetch patio status: \(error.localizedDescription)")
 			}
 		}
 	}

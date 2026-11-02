@@ -6,11 +6,11 @@
 import Foundation
 
 struct IndoorData: Decodable {
-	let co2_ppm: Int
-	let temp_c: Float
-	let humidity: Float
-	let voc: Int
-	let voc_index: Int
+	let co2_ppm: Int?
+	let temp_c: Float?
+	let humidity: Float?
+	let voc: Int?
+	let voc_index: Int?
 	let ts: Float
 
 	enum CodingKeys: String, CodingKey {
@@ -24,11 +24,11 @@ struct IndoorData: Decodable {
 }
 
 struct PatioData: Decodable {
-	let temp_c: Float
-	let humidity: Float
-	let wind_speed_ms: Float
-	let moisture_sensor_1: Float
-	let moisture_sensor_2: Float
+	let temp_c: Float?
+	let humidity: Float?
+	let wind_speed_ms: Float?
+	let moisture_sensor_1: Float?
+	let moisture_sensor_2: Float?
 	let ts: Float
 
 	enum CodingKeys: String, CodingKey {

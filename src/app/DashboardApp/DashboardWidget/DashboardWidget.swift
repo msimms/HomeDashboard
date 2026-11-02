@@ -30,8 +30,17 @@ struct Provider: AppIntentTimelineProvider {
 			let entryDate = currentDate
 
 			let intent = ConfigurationAppIntent()
-			intent.attribute1 = String(format: "CO\u{00B2} %u ppm", item.co2_ppm)
-			intent.attribute2 = String(format: "%.2f \u{00B0}C (%.2f \u{00B0}F)", item.temp_c, item.temp_c * 1.8 + 32.0)
+
+			if let co2 = item.co2_ppm {
+				intent.attribute1 = String(format: "CO\u{00B2} %u ppm", co2)
+			}
+			else {
+				intent.attribute1 = String(format: "CO\u{00B2} Unknown")
+			}
+
+			if let tempC = item.temp_c {
+				intent.attribute2 = String(format: "%.2f \u{00B0}C (%.2f \u{00B0}F)", tempC, tempC * 1.8 + 32.0)
+			}
 
 			let entry = StatusEntry(date: entryDate, configuration: intent)
 			entries.append(entry)
