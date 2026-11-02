@@ -55,6 +55,7 @@ float mapfloat(float x, float in_min, float in_max, float out_min, float out_max
 /// @function avg_buffer
 float avg_buffer(float* buf, size_t len) {
   float total = 0.0;
+
   for (int i = 0; i < len; ++i) {
     total += buf[i];
   }
@@ -85,6 +86,9 @@ void read_temperature_and_humidity_from_am2315c(float* temp_c, float* humidity) 
       Serial.print("[ERROR] g_DHT->read() returned ");
       Serial.println(status);
     }
+  }
+  else {
+      Serial.println("[ERROR] g_DHT not created.")
   }
 }
 
@@ -170,7 +174,6 @@ void print_wifi_status() {
   Serial.println(" dBm");
 }
 
-
 /// @function post_status
 void post_status(String body) {
 
@@ -230,10 +233,8 @@ void setup_am2315c() {
 
   delay(5);
 
-  g_DHT = new AM2315C(&Wire);
+  g_DHT = new AM2315C();
   if (g_DHT) {
-    //g_DHT->resetSensor();
-
     if (g_DHT->begin()) {
       Serial.println("[INFO] AM2315C sensor started!");
       delay(1000);
@@ -241,6 +242,9 @@ void setup_am2315c() {
     else {
       Serial.println("[ERROR] AM2315C sensor not found. Check wiring!");
     }
+  }
+  else {
+      Serial.println("[ERROR] g_DHT not created.")
   }
 
   Serial.println("[INFO] Done setting up the AM2315C...");
@@ -282,6 +286,10 @@ void setup() {
 
   // Initialize the AM2315C.
   setup_am2315c();
+
+  // Configure the pulldown resistors for the moisture sensors.
+  pinMode(MOISTURE_SENSOR_1, INPUT_PULLDOWN);
+  pinMode(MOISTURE_SENSOR_2, INPUT_PULLDOWN);
 
   // Initialize the UNO R4's built-in display.
   g_matrix.begin();
