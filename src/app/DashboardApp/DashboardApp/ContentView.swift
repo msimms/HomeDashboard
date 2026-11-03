@@ -11,10 +11,6 @@ struct ContentView: View {
 	var body: some View {
 		VStack(alignment: .center) {
 
-			HStack() {
-				Spacer()
-			}
-
 			// Indoor Air Quality
 			Image(systemName: "clock")
 				.imageScale(.large)
