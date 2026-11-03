@@ -29,7 +29,7 @@ int LED = 13;
 #define NUM_SAMPLES 10
 
 // Temperature and humidity sensor.
-AM2315C* g_DHT = NULL;
+AM2315C DHT;  // Default Wire interface
 
 // Create an instance of the ArduinoLEDMatrix class.
 ArduinoLEDMatrix g_matrix;
@@ -76,19 +76,16 @@ float read_anemometer() {
 
 /// @function read_temperature_and_humidity_from_am2315c
 void read_temperature_and_humidity_from_am2315c(float* temp_c, float* humidity) {
-  if (g_DHT) {
-    int status = g_DHT->read();
-    if (status == 0) {
-      (*temp_c) = g_DHT->getTemperature();
-      (*humidity) = g_DHT->getHumidity();
+  if (millis() - DHT.lastRead() >= 1000) {
+    int status = DHT.read();
+    if (status == AM2315C_OK) {
+      (*temp_c) = DHT.getTemperature();
+      (*humidity) = DHT.getHumidity();
     }
     else {
-      Serial.print("[ERROR] g_DHT->read() returned ");
+      Serial.print("[ERROR] DHT.read() returned ");
       Serial.println(status);
     }
-  }
-  else {
-      Serial.println("[ERROR] g_DHT not created.");
   }
 }
 
@@ -227,30 +224,30 @@ void setup_anemometer() {
 void setup_am2315c() {
   Serial.println("[INFO] Setting up the AM2315...");
 
-  // Initialize the I2C interface.
-  Wire.begin();
-
   // Use external resistors instead of the internal pullups.
   pinMode(A4, INPUT_PULLUP);
   pinMode(A5, INPUT_PULLUP);
 
   delay(5);
 
-  g_DHT = new AM2315C();
-  if (g_DHT) {
-    if (g_DHT->begin()) {
-      Serial.println("[INFO] AM2315C sensor started!");
-      delay(3000);
-    }
-    else {
-      Serial.println("[ERROR] AM2315C sensor not found. Check wiring!");
-    }
+  // Initialize the I2C interface.
+  Wire.begin();
+
+  if (DHT.begin()) {
+    Serial.println("[INFO] AM2315C sensor started!");
+    delay(3000);
   }
   else {
-      Serial.println("[ERROR] g_DHT not created.");
+    Serial.println("[ERROR] AM2315C sensor not found. Check wiring!");
   }
 
   Serial.println("[INFO] Done setting up the AM2315C...");
+}
+
+/// @function setup_moisture_sensors
+void setup_moisture_sensors() {
+  pinMode(MOISTURE_SENSOR_1, INPUT_PULLDOWN);
+  pinMode(MOISTURE_SENSOR_2, INPUT_PULLDOWN);
 }
 
 /// @function blink
@@ -268,7 +265,7 @@ void blink(int num_blinks) {
 void setup() {
 
   // Initialize serial and wait for port to open.
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   // Wait for the serial interface.
   while (!Serial) {
@@ -289,8 +286,7 @@ void setup() {
   setup_am2315c();
 
   // Configure the pulldown resistors for the moisture sensors.
-  pinMode(MOISTURE_SENSOR_1, INPUT_PULLDOWN);
-  pinMode(MOISTURE_SENSOR_2, INPUT_PULLDOWN);
+  setup_moisture_sensors();
 
   // Initialize the UNO R4's built-in display.
   g_matrix.begin();
@@ -325,7 +321,7 @@ void loop() {
     // Read temperature and humidity.
     float temp_c = 0.0;
     float humidity = 0.0;
-    if (g_DHT && g_DHT->isConnected()) {
+    if (DHT.isConnected()) {
       Serial.println("[INFO] Reading temperature and humidity...");
       read_temperature_and_humidity_from_am2315c(&temp_c, &humidity);
       buf_temp_c[i] = temp_c;
@@ -361,7 +357,7 @@ void loop() {
 
   // Format the output.
   char buff[800];
-  if (g_DHT->isConnected()) {
+  if (DHT.isConnected()) {
     snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"patio_monitor\", \"api_key\": \"%s\", \"wind speed ms\": %f, \"temperature\": %f, \"humidity\": %f, \"moisture_sensor_1\": %f, \"moisture_sensor_2\": %f}", API_KEY, wind_speed_ms, temp_c, humidity, moisture1, moisture2);
   }
   else {
