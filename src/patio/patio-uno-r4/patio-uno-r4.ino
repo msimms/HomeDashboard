@@ -88,7 +88,7 @@ void read_temperature_and_humidity_from_am2315c(float* temp_c, float* humidity) 
     }
   }
   else {
-      Serial.println("[ERROR] g_DHT not created.")
+      Serial.println("[ERROR] g_DHT not created.");
   }
 }
 
@@ -227,6 +227,9 @@ void setup_anemometer() {
 void setup_am2315c() {
   Serial.println("[INFO] Setting up the AM2315...");
 
+  // Initialize the I2C interface.
+  Wire.begin();
+
   // Use external resistors instead of the internal pullups.
   pinMode(A4, INPUT_PULLUP);
   pinMode(A5, INPUT_PULLUP);
@@ -237,14 +240,14 @@ void setup_am2315c() {
   if (g_DHT) {
     if (g_DHT->begin()) {
       Serial.println("[INFO] AM2315C sensor started!");
-      delay(1000);
+      delay(3000);
     }
     else {
       Serial.println("[ERROR] AM2315C sensor not found. Check wiring!");
     }
   }
   else {
-      Serial.println("[ERROR] g_DHT not created.")
+      Serial.println("[ERROR] g_DHT not created.");
   }
 
   Serial.println("[INFO] Done setting up the AM2315C...");
@@ -266,6 +269,7 @@ void setup() {
 
   // Initialize serial and wait for port to open.
   Serial.begin(9600);
+
   // Wait for the serial interface.
   while (!Serial) {
     delay(10);
@@ -274,9 +278,6 @@ void setup() {
 
   // Set the LED as output.
   pinMode(LED_BUILTIN, OUTPUT);
-
-  // Initialize the I2C interface.
-  Wire.begin();
 
   // Start the real time clock.
   RTC.begin();
@@ -345,7 +346,7 @@ void loop() {
     digitalWrite(LED, LOW);
 
     // Wait a second.
-    delay(1000);
+    delay(3000);
   }
 
   // Calculate the averages.
