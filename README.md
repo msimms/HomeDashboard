@@ -59,6 +59,8 @@ Build and upload using the Arduino IDE. The target board is the Arduino Nano 33 
 
 Install the required libraries from within the Arduino IDE by going to Sketch > Include Library > Manage Libraries.
 * Search for "AM2315C" and install the library.
+* Search for "ArduinoHttpClient" and install the library.
+* Search for "NTPClient" and install the library.
 
 ## Patio Microcontroller (Arduino UNO R4 WiFi)
 
