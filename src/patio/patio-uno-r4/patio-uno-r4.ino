@@ -284,6 +284,9 @@ void setup() {
   // Set the LED as output.
   pinMode(LED_BUILTIN, OUTPUT);
 
+  // Set to 14-bit resolution
+  analogReadResolution(14);
+
   // Start the real time clock.
   Serial.println("[INFO] Starting the RTC....");
   RTC.begin();
