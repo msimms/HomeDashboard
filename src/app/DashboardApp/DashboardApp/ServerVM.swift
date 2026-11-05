@@ -28,9 +28,7 @@ class ServerVM : ObservableObject {
 			do {
 				let item = try await APIClient.fetchIndoorStatus()
 
-				let isoFormatter = ISO8601DateFormatter()
-				isoFormatter.timeZone = TimeZone.current // Use local time
-				self.ts = isoFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(item.ts)))
+				self.ts = Date(timeIntervalSince1970: TimeInterval(item.ts)).formatted(date: .complete, time: .standard)
 
 				// Update published properties with decoded values
 				self.indoorCo2ppm = item.co2_ppm
@@ -47,7 +45,7 @@ class ServerVM : ObservableObject {
 				let item = try await APIClient.fetchPatioStatus()
 
 				// Update published properties with decoded values
-				self.outdoorTempC = item.temp_c
+				self.outdoorTempC = item.temperature
 				self.outdoorHumidity = item.humidity
 				self.windSpeedMs = item.wind_speed_ms
 				self.moistureSensor1 = item.moisture_sensor_1
