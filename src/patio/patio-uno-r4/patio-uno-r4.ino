@@ -7,17 +7,17 @@
 #include <Wire.h>
 #include <WiFiS3.h>
 #include <ArduinoHttpClient.h>
-#include "Arduino_LED_Matrix.h" // Include the LED_Matrix library
-#include "arduino_secrets.h" 
+#include "Arduino_LED_Matrix.h"  // Include the LED_Matrix library
+#include "arduino_secrets.h"
 
 #define REF_VOLTAGE 5.0
 #define ADC_RESOLUTION 16383
 
 // Anemometer (https://www.adafruit.com/product/1733)
-#define MIN_ANEMOMETER_VOLTAGE 0.10 // based on experimentation
+#define MIN_ANEMOMETER_VOLTAGE 0.10  // based on experimentation
 #define MAX_ANEMOMETER_VOLTAGE 2.0
-#define MIN_WIND_SPEED 0.2  // meters per sec
-#define MAX_WIND_SPEED 32.4 // meters per sec
+#define MIN_WIND_SPEED 0.2   // meters per sec
+#define MAX_WIND_SPEED 32.4  // meters per sec
 
 #define MOISTURE_SENSOR_1 A1
 #define MOISTURE_SENSOR_2 A2
@@ -29,7 +29,7 @@ int LED = 13;
 #define NUM_SAMPLES 10
 
 // Temperature and humidity sensor.
-AM2315C DHT;  // Default Wire interface
+AM2315C g_DHT;  // Default Wire interface
 
 // Create an instance of the ArduinoLEDMatrix class.
 ArduinoLEDMatrix g_matrix;
@@ -40,7 +40,7 @@ HttpClient g_client(g_ssl, STATUS_URL, STATUS_PORT);
 
 // NTP
 WiFiUDP g_udp;
-NTPClient g_time_client(g_udp, "pool.ntp.org", 0, 60000); // Update every 60s
+NTPClient g_time_client(g_udp, "pool.ntp.org", 0, 60000);  // Update every 60s
 
 // RED    -------- | VDD             |
 // YELLOW -------- | SDA    AM2315C  |
@@ -76,14 +76,13 @@ float read_anemometer() {
 
 /// @function read_temperature_and_humidity_from_am2315c
 void read_temperature_and_humidity_from_am2315c(float* temp_c, float* humidity) {
-  if (millis() - DHT.lastRead() >= 1000) {
-    int status = DHT.read();
+  if (millis() - g_DHT.lastRead() >= 1000) {
+    int status = g_DHT.read();
     if (status == AM2315C_OK) {
-      (*temp_c) = DHT.getTemperature();
-      (*humidity) = DHT.getHumidity();
-    }
-    else {
-      Serial.print("[ERROR] DHT.read() returned ");
+      (*temp_c) = g_DHT.getTemperature();
+      (*humidity) = g_DHT.getHumidity();
+    } else {
+      Serial.print("[ERROR] g_DHT.read() returned ");
       Serial.println(status);
     }
   }
@@ -146,8 +145,7 @@ void setup_wifi() {
     RTC.setTime(rtc_time);
 
     Serial.println("[INFO] RTC synced with NTP!");
-  }
-  else {
+  } else {
     Serial.println("[INFO] Already connected to WiFi!");
   }
 }
@@ -216,7 +214,7 @@ void post_status(String body) {
 /// @function setup_anemometer
 void setup_anemometer() {
   Serial.println("[INFO] Setting up the anemometer...");
-  pinMode(A0, INPUT_PULLDOWN); // Enable internal pull-down resistor on pin A0
+  pinMode(A0, INPUT_PULLDOWN);  // Enable internal pull-down resistor on pin A0
   Serial.println("[INFO] Done setting up the anemometer...");
 }
 
@@ -231,13 +229,13 @@ void setup_am2315c() {
   delay(5);
 
   // Initialize the I2C interface.
+  Serial.println("[INFO] Initializing I2C interface...");
   Wire.begin();
 
-  if (DHT.begin()) {
+  if (g_DHT.begin()) {
     Serial.println("[INFO] AM2315C sensor started!");
     delay(3000);
-  }
-  else {
+  } else {
     Serial.println("[ERROR] AM2315C sensor not found. Check wiring!");
   }
 
@@ -264,36 +262,48 @@ void blink(int num_blinks) {
 /// @function setup
 void setup() {
 
+  // Initialize the UNO R4's built-in display.
+  g_matrix.begin();
+
+  // For debugging.
+  g_matrix.loadFrame(LEDMATRIX_CHIP);
+
   // Initialize serial and wait for port to open.
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   // Wait for the serial interface.
   while (!Serial) {
-    delay(10);
+    delay(100);
   }
   Serial.println("[INFO] Initializing....");
+  delay(1000);
+
+  // For debugging.
+  g_matrix.loadFrame(LEDMATRIX_UNO);
 
   // Set the LED as output.
   pinMode(LED_BUILTIN, OUTPUT);
 
   // Start the real time clock.
+  Serial.println("[INFO] Starting the RTC....");
   RTC.begin();
 
+  // Connect to the wifi network.
+  Serial.println("[INFO] Initializing the WiFi....");
+  setup_wifi();
+
   // Initialize the anemometer.
+  Serial.println("[INFO] Initializing the anemometer....");
   setup_anemometer();
 
   // Initialize the AM2315C.
+  Serial.println("[INFO] Initializing the AM3215C....");
   setup_am2315c();
 
   // Configure the pulldown resistors for the moisture sensors.
+  Serial.println("[INFO] Initializing the moisture sensors....");
   setup_moisture_sensors();
-
-  // Initialize the UNO R4's built-in display.
-  g_matrix.begin();
-
-  // Connect to the wifi network.
-  setup_wifi();
-
+  
   // Make the onboard LED panel display a happy face.
   g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
 }
@@ -302,13 +312,16 @@ void setup() {
 void loop() {
 
   // Average several samples together.
-  float buf_wind_speed_ms[NUM_SAMPLES] = {0};
-  float buf_temp_c[NUM_SAMPLES] = {0};
-  float buf_humidity[NUM_SAMPLES] = {0};
-  float buf_moisture1[NUM_SAMPLES] = {0};
-  float buf_moisture2[NUM_SAMPLES] = {0};
+  float buf_wind_speed_ms[NUM_SAMPLES] = { 0 };
+  float buf_temp_c[NUM_SAMPLES] = { 0 };
+  float buf_humidity[NUM_SAMPLES] = { 0 };
+  float buf_moisture1[NUM_SAMPLES] = { 0 };
+  float buf_moisture2[NUM_SAMPLES] = { 0 };
 
   for (int i = 0; i < NUM_SAMPLES; ++i) {
+
+    // For debugging.
+    g_matrix.loadFrame(LEDMATRIX_EMOJI_BASIC);
 
     // Turn the LED on.
     digitalWrite(LED, HIGH);
@@ -321,13 +334,12 @@ void loop() {
     // Read temperature and humidity.
     float temp_c = 0.0;
     float humidity = 0.0;
-    if (DHT.isConnected()) {
+    if (g_DHT.isConnected()) {
       Serial.println("[INFO] Reading temperature and humidity...");
       read_temperature_and_humidity_from_am2315c(&temp_c, &humidity);
       buf_temp_c[i] = temp_c;
       buf_humidity[i] = humidity;
-    }
-    else {
+    } else {
       Serial.println("[ERROR] The temperature and humidity sensor is not connected!");
     }
 
@@ -341,7 +353,10 @@ void loop() {
     // Turn the LED off.
     digitalWrite(LED, LOW);
 
-    // Wait a second.
+    // For debugging.
+    g_matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
+
+    // Wait a few seconds.
     delay(3000);
   }
 
@@ -357,10 +372,9 @@ void loop() {
 
   // Format the output.
   char buff[800];
-  if (DHT.isConnected()) {
+  if (g_DHT.isConnected()) {
     snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"patio_monitor\", \"api_key\": \"%s\", \"wind speed ms\": %f, \"temperature\": %f, \"humidity\": %f, \"moisture_sensor_1\": %f, \"moisture_sensor_2\": %f}", API_KEY, wind_speed_ms, temp_c, humidity, moisture1, moisture2);
-  }
-  else {
+  } else {
     snprintf(buff, sizeof(buff) - 1, "{\"collection\": \"patio_monitor\", \"api_key\": \"%s\", \"wind speed ms\": %f, \"moisture_sensor_1\": %f, \"moisture_sensor_2\": %f}", API_KEY, wind_speed_ms, moisture1, moisture2);
   }
   Serial.println(buff);
