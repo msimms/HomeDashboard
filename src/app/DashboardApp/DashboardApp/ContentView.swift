@@ -49,7 +49,7 @@ struct ContentView: View {
 					.foregroundStyle(.tint)
 				VStack() {
 					if let value = self.serverVM.outdoorTempC {
-						Text(String(format: "Temperature %.2f \u{00B0}C", value))
+						Text(String(format: "Temperature %.2f \u{00B0}C (%.2f \u{00B0}F)", value, value * 1.8 + 32.0))
 							.modifier(CommonStyle())
 					}
 					if let value = self.serverVM.outdoorHumidity {
