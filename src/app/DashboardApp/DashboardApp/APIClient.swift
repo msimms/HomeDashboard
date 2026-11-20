@@ -34,7 +34,7 @@ struct PatioData: Decodable {
 	enum CodingKeys: String, CodingKey {
 		case temperature
 		case humidity
-		case wind_speed_ms
+		case wind_speed_ms = "wind speed ms"
 		case moisture_sensor_1
 		case moisture_sensor_2
 		case ts

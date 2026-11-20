@@ -40,6 +40,14 @@ struct ContentView: View {
 						Text(String(format: "Humidity %.2f %%", value))
 							.modifier(CommonStyle())
 					}
+					if let value = self.serverVM.indoorVOC {
+						Text(String(format: "VOC %d", value))
+							.modifier(CommonStyle())
+					}
+					if let value = self.serverVM.indoorVocIndex {
+						Text(String(format: "VOC Index %d", value))
+							.modifier(CommonStyle())
+					}
 				}
 				.padding(10)
 

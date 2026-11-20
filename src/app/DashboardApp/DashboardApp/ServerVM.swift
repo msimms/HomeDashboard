@@ -13,6 +13,8 @@ class ServerVM : ObservableObject {
 	@Published var indoorCo2ppm: Int?
 	@Published var indoorTempC: Float?
 	@Published var indoorHumidity: Float?
+	@Published var indoorVOC: Int?
+	@Published var indoorVocIndex: Int?
 	@Published var outdoorTempC: Float?
 	@Published var outdoorHumidity: Float?
 	@Published var windSpeedMs: Float?
@@ -34,7 +36,8 @@ class ServerVM : ObservableObject {
 				self.indoorCo2ppm = item.co2_ppm
 				self.indoorTempC = item.temp_c
 				self.indoorHumidity = item.humidity
-
+				self.indoorVOC = item.voc
+				self.indoorVocIndex = item.voc_index
 			} catch {
 				print("Unable to fetch indoor air quality: \(error.localizedDescription)")
 			}
